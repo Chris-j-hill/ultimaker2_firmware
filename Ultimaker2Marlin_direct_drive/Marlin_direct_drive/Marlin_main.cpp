@@ -478,8 +478,11 @@ void setup()
   #if defined(CONTROLLERFAN_PIN) && CONTROLLERFAN_PIN > -1
     SET_OUTPUT(CONTROLLERFAN_PIN); //Set pin used for driver cooling fan
   #endif
+  #ifdef FILAMENT_RUNNOUT_SENSOR
+  pinMode(filament_sensor_pin, INPUT);   //set pin 13 as read in pin for filament sensor
+  #endif
 }
-
+void check_filament_sensor();
 
 void loop()
 {
@@ -524,6 +527,14 @@ void loop()
       bufindr = (bufindr + 1)%BUFSIZE;
     }
   }
+
+
+//  _____________
+  check_filament_sensor();   
+  
+//  _____________
+
+
   //check heater every n milliseconds
   manage_heater();
   manage_inactivity();
@@ -531,6 +542,11 @@ void loop()
   lcd_update();
   lifetime_stats_tick();
 }
+
+//#include "ultralcd.h"
+//bool lcd_clicked();
+
+
 
 void get_command()
 {
@@ -2896,5 +2912,163 @@ bool setTargetedHotend(int code){
     }
   }
   return false;
+}
+
+
+
+
+void check_filament_sensor(){
+//#ifndef FILAMENT_RUNOUT_SENSOR  //if sensor not defined, return
+//return;
+//#endif
+
+#ifdef FILAMENT_RUNOUT_SENSOR
+
+// from marlin 1.1.x  
+//if ((IS_SD_PRINTING || print_job_timer.isRunning()) && (READ(FIL_RUNOUT_PIN) == FIL_RUNOUT_INVERTING))
+
+//                          \/ this is the closest equivalent i could find, set true once print is in progress, used to record lifetime print values
+// if ((IS_SD_PRINTING || is_printing)&&(digitalRead(13) == HIGH) ){ //check pin state, if low, switch not pressed, no filament
+
+   if ((card.sdprinting)&&(digitalRead(13) == HIGH) ){ //check pin state, if low, switch not pressed, no filament
+
+  //M600 command from process_commands() function  
+ 
+  bool filament_change_vars_defined = true;  //use defined filament change paramenters if true
+  int filament_change_retract_length=-FILAMANT_BOWDEN_LENGTH;
+int filament_change_z_lift =10;
+int filament_change_x_pos = 0;
+int filament_change_y_pos = 100;
+int filament_change_initial_retract = 2;
+ 
+// code from M600 case, execute here too, emulate m code command based on defined parameters above or elsewhere 
+      float target[4];
+        float lastpos[4];
+        target[X_AXIS]=current_position[X_AXIS];
+        target[Y_AXIS]=current_position[Y_AXIS];
+        target[Z_AXIS]=current_position[Z_AXIS];
+        target[E_AXIS]=current_position[E_AXIS];
+        lastpos[X_AXIS]=current_position[X_AXIS];
+        lastpos[Y_AXIS]=current_position[Y_AXIS];
+        lastpos[Z_AXIS]=current_position[Z_AXIS];
+        lastpos[E_AXIS]=current_position[E_AXIS];
+        //retract by E
+        if(filament_change_vars_defined)
+        {
+          target[E_AXIS]+= filament_change_initial_retract;
+        }
+        else
+        {
+          #ifdef FILAMENTCHANGE_FIRSTRETRACT
+            target[E_AXIS]+= FILAMENTCHANGE_FIRSTRETRACT ;
+          #endif
+        }
+        plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder);
+
+        //lift Z
+        if(filament_change_vars_defined)
+        {
+          target[Z_AXIS]+= filament_change_z_lift;
+        }
+        else
+        {
+          #ifdef FILAMENTCHANGE_ZADD
+            target[Z_AXIS]+= FILAMENTCHANGE_ZADD ;
+          #endif
+        }
+        plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder);
+
+        //move xy
+        if(filament_change_vars_defined)
+        {
+          target[X_AXIS]= filament_change_x_pos;
+        }
+        else
+        {
+          #ifdef FILAMENTCHANGE_XPOS
+            target[X_AXIS]= FILAMENTCHANGE_XPOS ;
+          #endif
+        }
+        if(filament_change_vars_defined)
+        {
+          target[Y_AXIS]= filament_change_y_pos;
+        }
+        else
+        {
+          #ifdef FILAMENTCHANGE_YPOS
+            target[Y_AXIS]= FILAMENTCHANGE_YPOS ;
+          #endif
+        }
+
+        plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder);
+
+        if(filament_change_vars_defined)
+        {
+          target[E_AXIS]+= filament_change_retract_length;
+        }
+        else
+        {
+          #ifdef FILAMENTCHANGE_FINALRETRACT
+            target[E_AXIS]+= FILAMENTCHANGE_FINALRETRACT ;
+          #endif
+        }
+
+        plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder);
+
+        //finish moves
+        st_synchronize();
+        //disable extruder steppers so filament can be removed
+        disable_e0();
+        disable_e1();
+        disable_e2();
+        delay(100);
+        LCD_ALERTMESSAGEPGM(MSG_FILAMENTCHANGE);
+        uint8_t cnt=0;
+        int temp = millis();
+        card.pause = true;
+        while(card.pause){
+     
+          cnt++;
+          manage_heater();
+          manage_inactivity();
+          lcd_update();
+          lifetime_stats_tick();
+          if(cnt==0)
+          {
+          #if BEEPER > 0
+            SET_OUTPUT(BEEPER);
+
+            WRITE(BEEPER,HIGH);
+            delay(3);
+            WRITE(BEEPER,LOW);
+            delay(3);
+          #else
+            lcd_buzz(1000/6,100);
+          #endif
+          }
+        }
+
+        //return to normal
+        if(filament_change_vars_defined)
+        {
+          target[E_AXIS]+= -filament_change_retract_length;
+        }
+        else
+        {
+          #ifdef FILAMENTCHANGE_FINALRETRACT
+            target[E_AXIS]+=(-1)*FILAMENTCHANGE_FINALRETRACT ;
+          #endif
+        }
+        current_position[E_AXIS]=target[E_AXIS]; //the long retract of L is compensated by manual filament feeding
+        plan_set_e_position(current_position[E_AXIS]);
+        plan_buffer_line(target[X_AXIS], target[Y_AXIS], target[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder); //should do nothing
+        plan_buffer_line(lastpos[X_AXIS], lastpos[Y_AXIS], target[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder); //move xy back
+        plan_buffer_line(lastpos[X_AXIS], lastpos[Y_AXIS], lastpos[Z_AXIS], target[E_AXIS], feedrate/60, active_extruder); //move z back
+        plan_buffer_line(lastpos[X_AXIS], lastpos[Y_AXIS], lastpos[Z_AXIS], lastpos[E_AXIS], feedrate/60, active_extruder); //final untretract
+    
+
+ }
+
+  #endif
 }
 
