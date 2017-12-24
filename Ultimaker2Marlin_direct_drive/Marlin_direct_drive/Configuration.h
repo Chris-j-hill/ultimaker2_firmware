@@ -384,10 +384,13 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 //Length of the bowden tube. Used for the material load/unload procedure.
 #define FILAMANT_BOWDEN_LENGTH        85
 
-//define if enabled
+//sensor enabled if defined, comment out to disable
 #define FILAMENT_RUNOUT_SENSOR
-#ifdef FILAMENT_RUNOUT_SENSOR
+
+#ifdef FILAMENT_RUNOUT_SENSOR                 // advanced features
 #define filament_sensor_pin 13
+#define filament_sensor_pullup                // define if using internal pullup
+#define filament_sensor_pin_inverting true    // set to true if HIGH means no filament
 #endif
 //===========================================================================
 //=============================Additional Features===========================

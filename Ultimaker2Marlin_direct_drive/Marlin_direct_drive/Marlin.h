@@ -96,6 +96,9 @@ void process_commands();
 
 void manage_inactivity();
 
+void filament_sensor_init();
+void check_filament_sensor();
+
 #if defined(X_ENABLE_PIN) && X_ENABLE_PIN > -1
   #define  enable_x() WRITE(X_ENABLE_PIN, X_ENABLE_ON)
   #define disable_x() WRITE(X_ENABLE_PIN,!X_ENABLE_ON)
