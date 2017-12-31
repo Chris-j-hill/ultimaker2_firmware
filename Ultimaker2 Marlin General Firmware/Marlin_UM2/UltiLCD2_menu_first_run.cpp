@@ -423,7 +423,7 @@ static void runMaterialForward()
 
     current_position[E_AXIS] = 0;
     plan_set_e_position(current_position[E_AXIS]);
-    current_position[E_AXIS] = FILAMENT_FORWARD_LENGTH;
+    current_position[E_AXIS] = filament_bowden_length()+FILAMENT_FORWARD_LENGTH;
     plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], FILAMENT_INSERT_FAST_SPEED, 0);
 
     //Put back origonal values.
@@ -467,7 +467,7 @@ static void lcd_menu_first_run_material_load_forward()
     }
 
     long pos = st_get_position(E_AXIS);
-    long targetPos = lround(FILAMENT_FORWARD_LENGTH*axis_steps_per_unit[E_AXIS]);
+    long targetPos = lround((filament_bowden_length()+FILAMENT_FORWARD_LENGTH)*axis_steps_per_unit[E_AXIS]);
     uint8_t progress = (pos * 125 / targetPos);
     lcd_progressbar(progress);
 

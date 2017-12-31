@@ -433,8 +433,6 @@ void servo_init()
 #endif
 }
 
-//void filament_sensor_init();
-//void check_filament_sensor();
 
 void setup()
 {
@@ -491,9 +489,9 @@ void setup()
 #if defined(CONTROLLERFAN_PIN) && CONTROLLERFAN_PIN > -1
   SET_OUTPUT(CONTROLLERFAN_PIN); //Set pin used for driver cooling fan
 #endif
-
+  PSTR("hi");
 }
-//void check_filament_sensor();
+
 
 void loop()
 {
@@ -2989,9 +2987,11 @@ void check_filament_sensor() {
   if ((card.sdprinting) && (digitalRead(filament_sensor_pin) == filament_sensor_empty) ) { //check pin state, if low, switch not pressed, no filament
 
     //M600 command from process_commands() function
-
+    
+    int bowden_length = filament_bowden_length();   //returns the lenght of the bowden depending on acive extruder
+       
     bool filament_change_vars_defined = true;  //use defined filament change paramenters if true
-    int filament_change_retract_length = -FILAMANT_BOWDEN_LENGTH;
+    int filament_change_retract_length = -bowden_length;
     int filament_change_z_lift = 10;  //clearance height
     int filament_change_x_pos = 10;   //aim for front center for filament change
     int filament_change_y_pos = 100;
@@ -3091,16 +3091,16 @@ void check_filament_sensor() {
       lifetime_stats_tick();
       if (cnt == 0)
       {
-#if BEEPER > 0
+      #if BEEPER > 0
         SET_OUTPUT(BEEPER);
 
         WRITE(BEEPER, HIGH);
         delay(3);
         WRITE(BEEPER, LOW);
         delay(3);
-#else
+        #else
         lcd_buzz(1000 / 6, 100);
-#endif
+        #endif
       }
     }
 
@@ -3125,5 +3125,22 @@ void check_filament_sensor() {
   }
 
 #endif
+}
+
+int filament_bowden_length(){
+  int bowden_length=0;
+#ifdef DIFFERENT_FILAMENT_PATH_LENGTH
+
+  if(active_extruder ==0)
+    bowden_length = FILAMANT_BOWDEN_LENGTH_E0;
+
+  else if(active_extruder==1)
+    bowden_length = FILAMANT_BOWDEN_LENGTH_E1;
+
+#else
+  bowden_length = FILAMANT_BOWDEN_LENGTH;
+#endif
+
+  return bowden_length;
 }
 

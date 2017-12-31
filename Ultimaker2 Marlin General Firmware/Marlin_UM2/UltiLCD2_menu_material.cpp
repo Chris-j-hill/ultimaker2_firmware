@@ -143,7 +143,7 @@ static void lcd_menu_change_material_preheat()
 
             plan_set_e_position(0);
             plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], -1.0 / volume_to_filament_length[active_extruder], FILAMENT_REVERSAL_SPEED, active_extruder);
-            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], -FILAMENT_REVERSAL_LENGTH / volume_to_filament_length[active_extruder], FILAMENT_REVERSAL_SPEED, active_extruder);
+            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], -(filament_bowden_length()+FILAMENT_REVERSAL_LENGTH) / volume_to_filament_length[active_extruder], FILAMENT_REVERSAL_SPEED, active_extruder);
 
             max_feedrate[E_AXIS] = old_max_feedrate_e;
             retract_acceleration = old_retract_acceleration;
@@ -194,7 +194,7 @@ static void lcd_menu_change_material_remove()
     }
 
     long pos = -st_get_position(E_AXIS);
-    long targetPos = lround(FILAMENT_REVERSAL_LENGTH * axis_steps_per_unit[E_AXIS]);
+    long targetPos = lround((filament_bowden_length()+FILAMENT_REVERSAL_LENGTH) * axis_steps_per_unit[E_AXIS]);
     uint8_t progress = (pos * 125 / targetPos);
     lcd_progressbar(progress);
 
@@ -327,7 +327,7 @@ static void lcd_menu_change_material_insert_wait_user_ready()
     retract_acceleration = FILAMENT_LONG_MOVE_ACCELERATION;
 
     plan_set_e_position(0);
-    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], FILAMENT_FORWARD_LENGTH / volume_to_filament_length[active_extruder], FILAMENT_INSERT_FAST_SPEED, active_extruder);
+    plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], (filament_bowden_length()+FILAMENT_FORWARD_LENGTH) / volume_to_filament_length[active_extruder], FILAMENT_INSERT_FAST_SPEED, active_extruder);
 
     //Put back origonal values.
     max_feedrate[E_AXIS] = old_max_feedrate_e;
@@ -352,7 +352,7 @@ static void lcd_menu_change_material_insert_forward()
     }
 
     long pos = st_get_position(E_AXIS);
-    long targetPos = lround(FILAMENT_FORWARD_LENGTH*axis_steps_per_unit[E_AXIS]);
+    long targetPos = lround(filament_bowden_length()+FILAMENT_FORWARD_LENGTH*axis_steps_per_unit[E_AXIS]);
     uint8_t progress = (pos * 125 / targetPos);
     lcd_progressbar(progress);
 
