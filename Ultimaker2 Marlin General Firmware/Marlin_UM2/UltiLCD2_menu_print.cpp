@@ -524,7 +524,8 @@ static void lcd_menu_print_printing()
 {
     if (card.pause)
     {
-        lcd_tripple_menu(PSTR("RESUME|PRINT"), PSTR("CHANGE|MATERIAL"), PSTR("TUNE"));
+        lcd_tripple_menu(PSTR("RESUME|PRINT"), PSTR("MATERIAL|SETTINGS"), PSTR("TUNE"));
+//        lcd_tripple_menu(PSTR("RESUME|PRINT"), PSTR("CHANGE|MATERIAL"), PSTR("TUNE"));
         if (lcd_lib_button_pressed)
         {
             if (IS_SELECTED_MAIN(0) && movesplanned() < 1)
@@ -535,8 +536,12 @@ static void lcd_menu_print_printing()
                     primed = true;
                 }
                 lcd_lib_beep();
-            }else if (IS_SELECTED_MAIN(1) && movesplanned() < 1)
-                lcd_change_to_menu_change_material(lcd_change_to_menu_change_material_return);
+            }else if (IS_SELECTED_MAIN(1) && movesplanned() < 1){
+                uint8_t temp_active_extruder = active_extruder;
+                lcd_change_to_menu(lcd_menu_material);  //use menu system from main menu, not print specific menu
+                active_extruder = temp_active_extruder;
+//                lcd_change_to_menu_change_material(lcd_change_to_menu_change_material_return);
+            }
             else if (IS_SELECTED_MAIN(2))
                 lcd_change_to_menu(lcd_menu_print_tune);
         }

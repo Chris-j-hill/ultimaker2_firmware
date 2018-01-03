@@ -1,3 +1,5 @@
+
+
 #include "Configuration.h"
 #ifdef ENABLE_ULTILCD2
 #include "UltiLCD2.h"
@@ -22,6 +24,14 @@ static void lcd_menu_advanced_version();
 static void lcd_menu_advanced_stats();
 static void lcd_menu_maintenance_motion();
 static void lcd_menu_advanced_factory_reset();
+static void lcd_menu_maintenance_move_axis();
+
+#ifdef MOVE_AXIS_MENU_OPTION_ENABLE
+static void lcd_menu_maintenance_move_x_axis();
+static void lcd_menu_maintenance_move_y_axis();
+static void lcd_menu_maintenance_move_z_axis();
+static void lcd_menu_maintenance_move_selected_axis();
+#endif
 
 void lcd_menu_maintenance()
 {
@@ -42,6 +52,15 @@ void lcd_menu_maintenance()
 
 static char* lcd_advanced_item(uint8_t nr)
 {
+  int added_items = 0;
+#ifdef DISABLE_STEPPER_MENU_OPTION_ENABLE
+      added_items ++;
+      #endif
+
+    #ifdef MOVE_AXIS_MENU_OPTION_ENABLE
+      added_items ++;
+    #endif
+  
     if (nr == 0)
         strcpy_P(card.longFilename, PSTR("< RETURN"));
     else if (nr == 1)
@@ -65,26 +84,36 @@ static char* lcd_advanced_item(uint8_t nr)
     else if (nr == 4 + BED_MENU_OFFSET + EXTRUDERS)
         strcpy_P(card.longFilename, PSTR("Raise buildplate"));
     else if (nr == 5 + BED_MENU_OFFSET + EXTRUDERS)
-        strcpy_P(card.longFilename, PSTR("Insert material"));
-    else if (nr == 6 + BED_MENU_OFFSET + EXTRUDERS)
+        strcpy_P(card.longFilename, PSTR("Insert material"));  
+        
+#ifdef DISABLE_STEPPER_MENU_OPTION_ENABLE
+    else if (nr == 6 + BED_MENU_OFFSET + EXTRUDERS * 2)
+        strcpy_P(card.longFilename, PSTR("Disable steppers"));
+#endif
+#ifdef MOVE_AXIS_MENU_OPTION_ENABLE
+    else if (nr == 5 + added_items + BED_MENU_OFFSET + EXTRUDERS * 2 )
+        strcpy_P(card.longFilename, PSTR("Move Axis"));
+#endif
+
+    else if (nr == 6 +  added_items + BED_MENU_OFFSET + EXTRUDERS)
 #if EXTRUDERS < 2
         strcpy_P(card.longFilename, PSTR("Move material"));
 #else
         strcpy_P(card.longFilename, PSTR("Move material (1)"));
-    else if (nr == 7 + BED_MENU_OFFSET + EXTRUDERS)
+    else if (nr == 7 +  added_items + BED_MENU_OFFSET + EXTRUDERS)
         strcpy_P(card.longFilename, PSTR("Move material (2)"));
 #endif
-    else if (nr == 6 + BED_MENU_OFFSET + EXTRUDERS * 2)
+    else if (nr == 6 +  added_items + BED_MENU_OFFSET + EXTRUDERS * 2)
         strcpy_P(card.longFilename, PSTR("Set fan speed"));
-    else if (nr == 7 + BED_MENU_OFFSET + EXTRUDERS * 2)
+    else if (nr == 7 +  added_items + BED_MENU_OFFSET + EXTRUDERS * 2)
         strcpy_P(card.longFilename, PSTR("Retraction settings"));
-    else if (nr == 8 + BED_MENU_OFFSET + EXTRUDERS * 2)
+    else if (nr == 8 +  added_items + BED_MENU_OFFSET + EXTRUDERS * 2)
         strcpy_P(card.longFilename, PSTR("Motion settings"));
-    else if (nr == 9 + BED_MENU_OFFSET + EXTRUDERS * 2)
+    else if (nr == 9 +  added_items + BED_MENU_OFFSET + EXTRUDERS * 2)
         strcpy_P(card.longFilename, PSTR("Version"));
-    else if (nr == 10 + BED_MENU_OFFSET + EXTRUDERS * 2)
+    else if (nr == 10 +  added_items + BED_MENU_OFFSET + EXTRUDERS * 2)
         strcpy_P(card.longFilename, PSTR("Runtime stats"));
-    else if (nr == 11 + BED_MENU_OFFSET + EXTRUDERS * 2)
+    else if (nr == 11 +  added_items + BED_MENU_OFFSET + EXTRUDERS * 2)
         strcpy_P(card.longFilename, PSTR("Factory reset"));
     else
         strcpy_P(card.longFilename, PSTR("???"));
@@ -136,7 +165,18 @@ static void lcd_menu_maintenance_advanced_return()
 
 static void lcd_menu_maintenance_advanced()
 {
-    lcd_scroll_menu(PSTR("ADVANCED"), 12 + BED_MENU_OFFSET + EXTRUDERS * 2, lcd_advanced_item, lcd_advanced_details);
+  int added_items =0;
+  
+    #ifdef DISABLE_STEPPER_MENU_OPTION_ENABLE
+      added_items ++;
+    #endif
+
+    #ifdef MOVE_AXIS_MENU_OPTION_ENABLE
+      added_items ++;
+    #endif
+    
+    lcd_scroll_menu(PSTR("ADVANCED"), 12 + BED_MENU_OFFSET + EXTRUDERS * 2 + added_items , lcd_advanced_item, lcd_advanced_details);
+    
     if (lcd_lib_button_pressed)
     {
         if (IS_SELECTED_SCROLL(0))
@@ -168,7 +208,8 @@ static void lcd_menu_maintenance_advanced()
             enquecommand_P(PSTR("G28 X Y"));
             enquecommand_P(PSTR("M84"));        // Release motors
         }
-        else if (IS_SELECTED_SCROLL(3 + BED_MENU_OFFSET + EXTRUDERS))   // Lower bed
+
+        else if (IS_SELECTED_SCROLL(3 +  BED_MENU_OFFSET + EXTRUDERS))   // Lower bed
         {
             lcd_lib_beep();
             enquecommand_P(PSTR("G28 Z"));
@@ -192,7 +233,19 @@ static void lcd_menu_maintenance_advanced()
             
             lcd_change_to_menu_insert_material(lcd_menu_maintenance_advanced_return);
         }
-        else if (IS_SELECTED_SCROLL(6 + BED_MENU_OFFSET + EXTRUDERS))
+#ifdef DISABLE_STEPPER_MENU_OPTION_ENABLE   
+        else if (IS_SELECTED_SCROLL(6 + BED_MENU_OFFSET + EXTRUDERS * 2))   //Disable steppers   
+        {
+            lcd_lib_beep();
+            enquecommand_P(PSTR("M84"));
+        }
+#endif
+#ifdef MOVE_AXIS_MENU_OPTION_ENABLE   //if in config file
+        else if (IS_SELECTED_SCROLL(5 + added_items + BED_MENU_OFFSET + EXTRUDERS * 2))    //Move axis
+            lcd_change_to_menu(lcd_menu_maintenance_move_axis, 0);
+
+#endif
+        else if (IS_SELECTED_SCROLL(6 + added_items + BED_MENU_OFFSET + EXTRUDERS))
         {
             set_extrude_min_temp(0);
             active_extruder = 0;
@@ -200,7 +253,7 @@ static void lcd_menu_maintenance_advanced()
             lcd_change_to_menu(lcd_menu_maintenance_extrude, 0);
         }
 #if EXTRUDERS > 1
-        else if (IS_SELECTED_SCROLL(7 + BED_MENU_OFFSET + EXTRUDERS))
+        else if (IS_SELECTED_SCROLL(7 + added_items + BED_MENU_OFFSET + EXTRUDERS))
         {
             set_extrude_min_temp(0);
             active_extruder = 1;
@@ -208,17 +261,17 @@ static void lcd_menu_maintenance_advanced()
             lcd_change_to_menu(lcd_menu_maintenance_extrude, 0);
         }
 #endif
-        else if (IS_SELECTED_SCROLL(6 + BED_MENU_OFFSET + EXTRUDERS * 2))
+        else if (IS_SELECTED_SCROLL(6 + added_items + BED_MENU_OFFSET + EXTRUDERS * 2))
             LCD_EDIT_SETTING_BYTE_PERCENT(fanSpeed, "Fan speed", "%", 0, 100);
-        else if (IS_SELECTED_SCROLL(7 + BED_MENU_OFFSET + EXTRUDERS * 2))
+        else if (IS_SELECTED_SCROLL(7 + added_items + BED_MENU_OFFSET + EXTRUDERS * 2))
             lcd_change_to_menu(lcd_menu_maintenance_retraction, SCROLL_MENU_ITEM_POS(0));
-        else if (IS_SELECTED_SCROLL(8 + BED_MENU_OFFSET + EXTRUDERS * 2))
+        else if (IS_SELECTED_SCROLL(8 + added_items + BED_MENU_OFFSET + EXTRUDERS * 2))
             lcd_change_to_menu(lcd_menu_maintenance_motion, SCROLL_MENU_ITEM_POS(0));
-        else if (IS_SELECTED_SCROLL(9 + BED_MENU_OFFSET + EXTRUDERS * 2))
+        else if (IS_SELECTED_SCROLL(9 + added_items + BED_MENU_OFFSET + EXTRUDERS * 2))
             lcd_change_to_menu(lcd_menu_advanced_version, SCROLL_MENU_ITEM_POS(0));
-        else if (IS_SELECTED_SCROLL(10 + BED_MENU_OFFSET + EXTRUDERS * 2))
+        else if (IS_SELECTED_SCROLL(10 + added_items + BED_MENU_OFFSET + EXTRUDERS * 2))
             lcd_change_to_menu(lcd_menu_advanced_stats, SCROLL_MENU_ITEM_POS(0));
-        else if (IS_SELECTED_SCROLL(11 + BED_MENU_OFFSET + EXTRUDERS * 2))
+        else if (IS_SELECTED_SCROLL(11 + added_items + BED_MENU_OFFSET + EXTRUDERS * 2))
             lcd_change_to_menu(lcd_menu_advanced_factory_reset, SCROLL_MENU_ITEM_POS(1));
     }
 }
@@ -349,9 +402,9 @@ static void doFactoryReset()
     //Jump to address 0x0000
 #ifdef __AVR__
     asm volatile(
-            "clr	r30		\n\t"
-            "clr	r31		\n\t"
-            "ijmp	\n\t"
+            "clr  r30   \n\t"
+            "clr  r31   \n\t"
+            "ijmp \n\t"
             );
 #else
     //TODO
@@ -563,5 +616,201 @@ static void lcd_menu_maintenance_led()
         }
     }
 }
+
+#ifdef MOVE_AXIS_MENU_OPTION_ENABLE
+
+static char* lcd_advanced_move_axis_item(uint8_t nr)
+{
+      if (nr == 0)
+        strcpy_P(card.longFilename, PSTR("< RETURN"));
+    else if (nr == 1)
+        strcpy_P(card.longFilename, PSTR("X Axis"));
+    else if (nr == 2)
+        strcpy_P(card.longFilename, PSTR("Y Axis"));
+    else if (nr == 3)
+        strcpy_P(card.longFilename, PSTR("Z Axis"));
+
+#if EXTRUDERS >1
+    else if (nr == 4)
+        strcpy_P(card.longFilename, PSTR("E1 Axis"));
+    else if (nr == 5)
+        strcpy_P(card.longFilename, PSTR("E2 Axis"));
+    else if (nr == 6)
+        strcpy_P(card.longFilename, PSTR("Home Axis"))
+#else
+    else if (nr == 4)
+        strcpy_P(card.longFilename, PSTR("E Axis"));
+    else if (nr == 5)
+        strcpy_P(card.longFilename, PSTR("Home Axis"));
+#endif
+    else
+        strcpy_P(card.longFilename, PSTR("???"));
+    return card.longFilename;
+}
+
+static void lcd_advanced_move_axis_details(uint8_t nr)
+{
+    char buffer[16];
+    buffer[0] = '\0';
+    if (nr == 1)
+    {
+        int_to_string(current_position[X_AXIS], buffer, PSTR("mm"));
+    }
+    else if (nr == 2)
+    {
+        int_to_string(current_position[Y_AXIS], buffer, PSTR("mm"));
+    }
+    else if (nr == 3)
+    {
+        int_to_string(current_position[Z_AXIS], buffer, PSTR("mm"));
+    }
+    else if (nr == 4)
+    {
+        active_extruder = 0;
+        int_to_string(current_position[E_AXIS], buffer, PSTR("mm"));
+    }    
+#if EXTRUDERS > 1
+    else if (nr == 5)
+    {
+        active_extruder = 1;
+        int_to_string(current_position[E_AXIS], buffer, PSTR("mm"));
+    } 
+#endif 
+    else{
+        return;
+    }
+    lcd_lib_draw_string(5, 53, buffer);
+}
+
+int selected_axis=0;
+
+static void lcd_menu_maintenance_move_x_axis(){    //select axis to move
+  selected_axis =1;
+  lcd_change_to_menu(lcd_menu_maintenance_move_selected_axis, 0);
+}
+static void lcd_menu_maintenance_move_y_axis(){
+  selected_axis =2;
+ lcd_change_to_menu(lcd_menu_maintenance_move_selected_axis, 0); 
+}
+
+static void lcd_menu_maintenance_move_z_axis(){
+  selected_axis =3;
+  lcd_change_to_menu(lcd_menu_maintenance_move_selected_axis, 0);
+}
+
+char prev_axis_buffer[8];    //issue of buffer not being written every cycle, have display one and one to hold previous in case where encoder not moved
+static void lcd_menu_maintenance_move_selected_axis()    //move selected axis with encoder
+{
+    
+    char buffer[8];
+    lcd_lib_clear();
+    if (lcd_lib_encoder_pos / ENCODER_TICKS_PER_SCROLL_MENU_ITEM != 0)
+    {
+    
+    
+        if (printing_state == PRINT_STATE_NORMAL && movesplanned() < 3)
+        {
+          if (selected_axis == 1)
+          {
+              current_position[X_AXIS] += lcd_lib_encoder_pos * 0.5;
+              if (current_position[X_AXIS] < X_MIN_POS) current_position[X_AXIS] = X_MIN_POS;
+              else if (current_position[X_AXIS] > X_MAX_POS) current_position[X_AXIS] = X_MAX_POS;
+              float_to_string(current_position[X_AXIS], buffer, PSTR("mm"));
+//              lcd_lib_draw_string_center(30, buffer);
+          }
+          else if (selected_axis == 2)
+          {
+              current_position[Y_AXIS] += lcd_lib_encoder_pos * 0.5;
+              if (current_position[Y_AXIS] < Y_MIN_POS) current_position[Y_AXIS] = Y_MIN_POS;
+              else if (current_position[Y_AXIS] > Y_MAX_POS) current_position[Y_AXIS] = Y_MAX_POS;
+              float_to_string(current_position[Y_AXIS], buffer, PSTR("mm"));
+//              lcd_lib_draw_string_center(30, buffer);
+          }
+          else if (selected_axis == 3)
+          {
+              current_position[Z_AXIS] += lcd_lib_encoder_pos * 0.25;
+              if (current_position[Z_AXIS] < Z_MIN_POS) current_position[Z_AXIS] = Z_MIN_POS;
+              else if (current_position[Z_AXIS] > Z_MAX_POS) current_position[Z_AXIS] = Z_MAX_POS;
+              float_to_string(current_position[Z_AXIS], buffer, PSTR("mm"));
+              
+          }      
+            plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 50, active_extruder);
+            lcd_lib_encoder_pos = 0;
+            
+        }
+    }
+    
+    else
+    {
+      for (int alpha=0;alpha<sizeof(buffer);alpha++){
+        buffer[alpha]=prev_axis_buffer[alpha];
+      }
+    }
+   
+    if (lcd_lib_button_pressed)
+    {
+        lcd_change_to_menu(lcd_menu_maintenance_move_axis, 0);
+    }
+//    if (lcd_lib_button_pressed)
+//    {
+//        set_extrude_min_temp(EXTRUDE_MINTEMP);
+//        target_temperature[active_extruder] = 0;
+//        lcd_change_to_menu(previousMenu, previousEncoderPos);
+//    }
+    
+    lcd_lib_draw_string_centerP(20, PSTR("Position:"));
+    lcd_lib_draw_string_centerP(40, PSTR("Rotate to Move"));
+    lcd_lib_draw_string_centerP(53, PSTR("Click to return"));
+    lcd_lib_draw_string_center(30, buffer);
+    for (int alpha=0;alpha<sizeof(buffer);alpha++){
+    prev_axis_buffer[alpha] = buffer[alpha];
+    }
+    lcd_lib_update_screen();
+}
+
+
+static void lcd_menu_maintenance_move_axis()
+{
+ lcd_scroll_menu(PSTR("MOVE AXIS"), 5+EXTRUDERS, lcd_advanced_move_axis_item, lcd_advanced_move_axis_details);
+
+     if (lcd_lib_button_pressed)
+    {
+        if (IS_SELECTED_SCROLL(0))
+            lcd_change_to_menu(lcd_menu_maintenance_advanced);
+        else if (IS_SELECTED_SCROLL(1))
+            lcd_change_to_menu(lcd_menu_maintenance_move_x_axis, 0);
+        else if (IS_SELECTED_SCROLL(2))
+            lcd_change_to_menu(lcd_menu_maintenance_move_y_axis, 0);
+        else if (IS_SELECTED_SCROLL(3))
+            lcd_change_to_menu(lcd_menu_maintenance_move_z_axis, 0);
+
+        else if (IS_SELECTED_SCROLL(4))
+        {
+            set_extrude_min_temp(0);
+            active_extruder = 0;
+            target_temperature[active_extruder] = material[active_extruder].temperature;
+            lcd_change_to_menu(lcd_menu_maintenance_extrude, 0);
+        }
+
+#if EXTRUDERS > 1
+        else if (IS_SELECTED_SCROLL(5))
+        {
+            set_extrude_min_temp(0);
+            active_extruder = 1;
+            target_temperature[active_extruder] = material[active_extruder].temperature;
+            lcd_change_to_menu(lcd_menu_maintenance_extrude, 0);
+        }
+#endif
+
+        else if (IS_SELECTED_SCROLL(4 + EXTRUDERS))   // Home head
+        {
+            lcd_lib_beep();
+            enquecommand_P(PSTR("G28 X Y Z"));
+            enquecommand_P(PSTR("M84"));
+        }            
+    }
+}
+
+#endif
 
 #endif//ENABLE_ULTILCD2

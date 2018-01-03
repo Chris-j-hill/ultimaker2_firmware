@@ -112,7 +112,8 @@ static void lcd_menu_material_main()
 
 void lcd_change_to_menu_change_material(menuFunc_t return_menu)
 {
-    post_change_material_menu = return_menu;
+  
+    post_change_material_menu = return_menu; 
     preheat_end_time = millis() + (unsigned long)material[active_extruder].change_preheat_wait_time * 1000L;
     lcd_change_to_menu(lcd_menu_change_material_preheat);
 }

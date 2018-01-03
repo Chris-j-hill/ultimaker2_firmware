@@ -1,8 +1,9 @@
 #ifndef UM2_6_H
 #define UM2_6_H
 
-// !!!!  fully not implemented   !!!!
-// 1 bowden extruder and 1 direct drive extruder, enabled filament sensor
+//#error "Confirm this configuration file is complete, delete this line if it is"
+
+// 1 bowden extruder, no filament sensor, testing disable stepper commmand
 
 
 // This configuration file contains the basic settings.
@@ -64,7 +65,7 @@
 #endif
 
 // Define this to set a custom name for your generic Mendel,
-#define CUSTOM_MENDEL_NAME "UM2 Marlin Config 2"
+#define CUSTOM_MENDEL_NAME "UM2 Marlin Config 1"
 
 // This defines the number of extruders
 #ifndef EXTRUDERS
@@ -388,15 +389,17 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 //Length of the bowden tube. Used for the material load/unload procedure.
 #define FILAMANT_BOWDEN_LENGTH        705
 
+//#define DISABLE_STEPPER_MENU_OPTION_ENABLE
+//
+//#ifdef DISABLE_STEPPER_MENU_OPTION_ENABLE
+//#define INCLUDE_STEPPER_DISABLE 1
+//#else
+//#define INCLUDE_STEPPER_DISABLE 0
+//#endif
 
-//sensor enabled if defined, comment out to disable
-#define FILAMENT_RUNOUT_SENSOR
+#define DISABLE_STEPPER_MENU_OPTION_ENABLE
 
-#ifdef FILAMENT_RUNOUT_SENSOR                 // advanced features
-#define filament_sensor_pin 13
-#define filament_sensor_pullup                // define if using internal pullup
-#define filament_sensor_pin_inverting true    // set to true if HIGH means no filament
-#endif
+#define MOVE_AXIS_MENU_OPTION_ENABLE
 //===========================================================================
 //=============================Additional Features===========================
 //===========================================================================
@@ -608,4 +611,5 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #include "Configuration_adv.h"
 #include "thermistortables.h"
 
-#endif //__UM2_2_H
+#endif //__UM2_6_H
+
