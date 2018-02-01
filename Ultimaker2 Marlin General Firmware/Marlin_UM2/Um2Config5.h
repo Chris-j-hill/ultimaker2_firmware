@@ -201,10 +201,16 @@
     //#define  DEFAULT_Ki 1.08
     //#define  DEFAULT_Kd 114
 
-// Ultimaker2
-    #define  DEFAULT_Kp 10.0
-    #define  DEFAULT_Ki 2.5
-    #define  DEFAULT_Kd 100.0
+//// Ultimaker2
+//    #define  DEFAULT_Kp 10.0
+//    #define  DEFAULT_Ki 2.5
+//    #define  DEFAULT_Kd 100.0
+
+// Ultimaker2 measured values
+    #define  DEFAULT_Kp 12.0
+    #define  DEFAULT_Ki 1
+    #define  DEFAULT_Kd 34.3
+
 
 // Makergear
 //    #define  DEFAULT_Kp 7.0
@@ -377,7 +383,7 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 // Offset of the extruders (uncomment if using more than one and relying on firmware to position when changing).
 // The offset has to be X=0, Y=0 for the extruder 0 hotend (default extruder).
 // For the other hotends it is their distance from the extruder 0 hotend.
- #define EXTRUDER_OFFSET_X {0.0, -18.00} // (in mm) for each extruder, offset of the hotend on the X axis
+ #define EXTRUDER_OFFSET_X {0.0, 18.00} // (in mm) for each extruder, offset of the hotend on the X axis
  #define EXTRUDER_OFFSET_Y {0.0, 0.00}  // (in mm) for each extruder, offset of the hotend on the Y axis
 
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instantaneously)
@@ -388,18 +394,21 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define DIFFERENT_FILAMENT_PATH_LENGTH    //if defined firmware uses the two bowden lengths, can be different, if not defiend, bowden lengths assumed the same
 
 //Length of the bowden tube. Used for the material load/unload procedure.
-#define FILAMANT_BOWDEN_LENGTH        85
+#define FILAMANT_BOWDEN_LENGTH        90
 
-//takes priority over the above length paramater, set to bowden path lengths of two extruders
-#ifdef DIFFERENT_FILAMENT_PATH_LENGTH
+#ifdef DIFFERENT_FILAMENT_PATH_LENGTH //takes priority over the above length paramater, set to bowden path lengths of two extruders
 #if EXTRUDERS < 2
 #error "defined multiple bowden retract lengths but only one extruder defined"
 #endif
-
-#define FILAMANT_BOWDEN_LENGTH_E0 85
-#define FILAMANT_BOWDEN_LENGTH_E1 705
-
+#define FILAMANT_BOWDEN_LENGTH_E0 715
+#define FILAMANT_BOWDEN_LENGTH_E1 90
 #endif
+
+//added menus
+#define DISABLE_STEPPER_MENU_OPTION_ENABLE  //enable stepper disable menu item in maintanance->advanced->move axis
+#define MOVE_AXIS_MENU_OPTION_ENABLE  // enable menu item in maintanance->advanced->move axis
+#define ADVANCED_MATERIAL_CHANGE  //enable nozzle selection when changing material mid print, if disabled, will simply change active extruder
+
 //===========================================================================
 //=============================Additional Features===========================
 //===========================================================================

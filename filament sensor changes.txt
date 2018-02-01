@@ -1,0 +1,7 @@
+Changes made to standard ultimaker2.marlin in implementing filament sensor
+
+- #defines in configuration.h file
+- two functions into marlinmain.cpp
+- two function declarations into marlin.h
+- added filament_sensor_empty variable to list of private variables in marlinmain.cpp
+- execute both functions in void setup and void loop

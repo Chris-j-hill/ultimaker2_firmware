@@ -634,7 +634,7 @@ static char* lcd_advanced_move_axis_item(uint8_t nr)
     else if (nr == 5)
         strcpy_P(card.longFilename, PSTR("E2 Axis"));
     else if (nr == 6)
-        strcpy_P(card.longFilename, PSTR("Home Axis"))
+        strcpy_P(card.longFilename, PSTR("Home Axis"));
 #else
     else if (nr == 4)
         strcpy_P(card.longFilename, PSTR("E Axis"));

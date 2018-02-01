@@ -1,7 +1,7 @@
 /* -*- c++ -*- */
 
 /*
- * Ultimaker 2 direct drive 1 extruder
+ * Ultimaker 2 firmware for all Innovation Academy printer configurations 
  * 
     Reprap firmware based on Sprinter and grbl.
  Copyright (C) 2011 Camiel Gubbels / Erik van der Zalm

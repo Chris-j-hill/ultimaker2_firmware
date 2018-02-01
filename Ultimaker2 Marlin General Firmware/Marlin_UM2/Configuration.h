@@ -16,7 +16,7 @@
 //9 = pen mod
 
 #ifndef Configuration
-#define Configuration 6
+#define Configuration 11
 #endif
 
 
@@ -121,6 +121,26 @@
 #endif
 #endif
 
+
+
+#if Configuration == 10
+#ifdef CONFIG_INCLUDED
+#error "Too many configurations defined, can only build one at a time, only uncomment the relevant build in Configuation.h"
+#else
+#define CONFIG_INCLUDED
+#include "Um2Config10.h"
+#endif
+#endif
+
+
+#if Configuration == 11
+#ifdef CONFIG_INCLUDED
+#error "Too many configurations defined, can only build one at a time, only uncomment the relevant build in Configuation.h"
+#else
+#define CONFIG_INCLUDED
+#include "Um2Config11.h"
+#endif
+#endif
 
 #ifndef CONFIG_INCLUDED
 #error "No printer configuration defined, uncomment the relevant build in Configuation.h"
