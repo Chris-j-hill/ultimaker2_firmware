@@ -898,13 +898,13 @@ void lcd_material_reset_defaults()
 
     strcpy_P(buffer, PSTR("ABS"));
     eeprom_write_block(buffer, EEPROM_MATERIAL_NAME_OFFSET(1), 4);
-    eeprom_write_word(EEPROM_MATERIAL_TEMPERATURE_OFFSET(1), 260);
+    eeprom_write_word(EEPROM_MATERIAL_TEMPERATURE_OFFSET(1), 240);
     eeprom_write_word(EEPROM_MATERIAL_BED_TEMPERATURE_OFFSET(1), 90);
     eeprom_write_byte(EEPROM_MATERIAL_FAN_SPEED_OFFSET(1), 50);
     eeprom_write_word(EEPROM_MATERIAL_FLOW_OFFSET(1), 107);
     eeprom_write_float(EEPROM_MATERIAL_DIAMETER_OFFSET(1), 2.85);
 
-    eeprom_write_word(EEPROM_MATERIAL_CHANGE_TEMPERATURE(1), 260);
+    eeprom_write_word(EEPROM_MATERIAL_CHANGE_TEMPERATURE(1), 240);
     eeprom_write_byte(EEPROM_MATERIAL_CHANGE_WAIT_TIME(1), 0);
 
     strcpy_P(buffer, PSTR("CPE"));

@@ -33,6 +33,12 @@ static void lcd_menu_maintenance_move_z_axis();
 static void lcd_menu_maintenance_move_selected_axis();
 #endif
 
+#ifdef SAFER_EXTRUDE_MATERIAL_HEATUP
+void check_for_extruder_temp_error();
+uint8_t starting_temp;
+uint8_t extrude_start_time;
+#endif
+
 void lcd_menu_maintenance()
 {
     lcd_tripple_menu(PSTR("BUILD-|PLATE"), PSTR("ADVANCED"), PSTR("RETURN"));
@@ -317,6 +323,10 @@ static void lcd_menu_maintenance_advanced()
             set_extrude_min_temp(0);
             active_extruder = 0;
             target_temperature[active_extruder] = material[active_extruder].temperature;
+#ifdef SAFER_EXTRUDE_MATERIAL_HEATUP
+            starting_temp = current_temperature[active_extruder];
+            extrude_start_time = millis();
+#endif
             lcd_change_to_menu(lcd_menu_maintenance_extrude, 0);
         }
 #if EXTRUDERS > 1
@@ -325,6 +335,10 @@ static void lcd_menu_maintenance_advanced()
             set_extrude_min_temp(0);
             active_extruder = 1;
             target_temperature[active_extruder] = material[active_extruder].temperature;
+#ifdef SAFER_EXTRUDE_MATERIAL_HEATUP
+            starting_temp = current_temperature[active_extruder];
+            extrude_start_time = millis();
+#endif
             lcd_change_to_menu(lcd_menu_maintenance_extrude, 0);
         }
 #endif
@@ -384,7 +398,10 @@ void lcd_menu_maintenance_extrude()
         target_temperature[active_extruder] = 0;
         lcd_change_to_menu(previousMenu, previousEncoderPos);
     }
-
+#ifdef SAFER_EXTRUDE_MATERIAL_HEATUP
+    check_for_extruder_temp_error();    // check for temp error if not heating, eg if heater cartridge not connected properly
+                                        // Note: will not detect broken/disconnected sensors, assume that was caught on startup
+#endif
     lcd_lib_clear();
     lcd_lib_draw_string_centerP(20, PSTR("Nozzle temperature:"));
     lcd_lib_draw_string_centerP(40, PSTR("Rotate to extrude"));
@@ -422,6 +439,16 @@ void lcd_menu_maintenance_advanced_bed_heatup()
 }
 #endif
 
+#ifdef SAFER_EXTRUDE_MATERIAL_HEATUP
+void check_for_extruder_temp_error(){
+  //assume heater able to heat up by small increment in short time if properly connected and reading relatively cold temp
+  if ((current_temperature[active_extruder] < REASONABLY_LOW_TEMP) && (current_temperature[active_extruder] < starting_temp+SMALL_TEMP_INCREMENT) && (millis() > extrude_start_time+SHORT_TIME_PERIOD)){
+    //error probably occured
+    disable_heater();
+    Stop(STOP_REASON_HEATER_ERROR);
+  }
+}
+#endif
 void lcd_menu_advanced_version()
 {
     lcd_info_screen(previousMenu, NULL, PSTR("Return"));
@@ -856,6 +883,10 @@ static void lcd_menu_maintenance_move_axis()
             set_extrude_min_temp(0);
             active_extruder = 0;
             target_temperature[active_extruder] = material[active_extruder].temperature;
+#ifdef SAFER_EXTRUDE_MATERIAL_HEATUP
+            starting_temp = current_temperature[active_extruder];
+            extrude_start_time = millis();
+#endif
             lcd_change_to_menu(lcd_menu_maintenance_extrude, 0);
         }
 
@@ -865,6 +896,10 @@ static void lcd_menu_maintenance_move_axis()
             set_extrude_min_temp(0);
             active_extruder = 1;
             target_temperature[active_extruder] = material[active_extruder].temperature;
+#ifdef SAFER_EXTRUDE_MATERIAL_HEATUP
+            starting_temp = current_temperature[active_extruder];
+            extrude_start_time = millis();
+#endif
             lcd_change_to_menu(lcd_menu_maintenance_extrude, 0);
         }
 #endif

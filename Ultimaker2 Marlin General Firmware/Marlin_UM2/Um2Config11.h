@@ -174,7 +174,7 @@
 //Check if the heater heats up MAX_HEATING_TEMPERATURE_INCREASE within MAX_HEATING_CHECK_MILLIS while the PID was at the maximum.
 // If not, raise an error because most likely the heater is not heating up the temperature sensor. Indicating an issue in the system.
 #define MAX_HEATING_TEMPERATURE_INCREASE 10
-#define MAX_HEATING_CHECK_MILLIS (30 * 1000)
+#define MAX_HEATING_CHECK_MILLIS (45 * 1000)
 
 // If your bed has low resistance e.g. .6 ohm and throws the fuse you can duty cycle it to reduce the
 // average current. The value should be an integer and the heat bed will be turned on for 1 interval of
@@ -202,20 +202,20 @@
     //#define  DEFAULT_Kd 114
 
 //// Ultimaker2
-//    #define  DEFAULT_Kp 10.0
-//    #define  DEFAULT_Ki 2.5
-//    #define  DEFAULT_Kd 100.0
+    #define  DEFAULT_Kp 10.0*0.75
+    #define  DEFAULT_Ki 2.5*0.75
+    #define  DEFAULT_Kd 100.0
 
 // Ultimaker2 measured values
-//    #define  DEFAULT_Kp 12.0*0.75
-//    #define  DEFAULT_Ki 1*0.75
+//    #define  DEFAULT_Kp 12.0
+//    #define  DEFAULT_Ki 1
 //    #define  DEFAULT_Kd 34.3
 
 
 // Ultimaker2 olsson block values, see here http://eleccelerator.com/olsson-block-low-temperature-troubleshooting/
-    #define  DEFAULT_Kp 12.0*0.75
-    #define  DEFAULT_Ki 1*0.75
-    #define  DEFAULT_Kd 34.3
+//    #define  DEFAULT_Kp 12.0*0.75
+//    #define  DEFAULT_Ki 1*0.75
+//    #define  DEFAULT_Kd 34.3
 
 
 // Makergear
@@ -410,10 +410,6 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define FILAMANT_BOWDEN_LENGTH_E1 90
 #endif
 
-//added menus
-#define DISABLE_STEPPER_MENU_OPTION_ENABLE  //enable stepper disable menu item in maintanance->advanced->move axis
-#define MOVE_AXIS_MENU_OPTION_ENABLE  // enable menu item in maintanance->advanced->move axis
-#define ADVANCED_MATERIAL_CHANGE  //enable nozzle selection when changing material mid print, if disabled, will simply change active extruder
 
 //===========================================================================
 //=============================Additional Features===========================
@@ -622,6 +618,25 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 
 // Bed leveling wizard configuration
 #define LEVELING_OFFSET 0.1       // Assumed thickness of feeler gauge/paper used in leveling (mm)
+
+//===========================================================================
+//============================= Custom Features===========================
+//===========================================================================
+
+//added menus
+#define DISABLE_STEPPER_MENU_OPTION_ENABLE  //enable stepper disable menu item in maintanance->advanced->move axis
+#define MOVE_AXIS_MENU_OPTION_ENABLE  // enable menu item in maintanance->advanced->move axis
+#define ADVANCED_MATERIAL_CHANGE  //enable nozzle selection when changing material mid print, if disabled, will simply change active extruder
+
+
+//throw temp error if suspect not heating properly
+#define SAFER_EXTRUDE_MATERIAL_HEATUP
+
+#ifdef SAFER_EXTRUDE_MATERIAL_HEATUP
+#define SMALL_TEMP_INCREMENT 5        // assume if properly connected can heat up this amount
+#define SHORT_TIME_PERIOD 10000       // in this time period
+#define REASONABLY_LOW_TEMP 100       // provided the temperature is below this (Note: rate of temp increase slows at higher temps)
+#endif
 
 #include "Configuration_adv.h"
 #include "thermistortables.h"

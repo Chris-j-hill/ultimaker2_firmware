@@ -2011,6 +2011,7 @@ void process_commands()
         }
         break;
 #endif
+
 #ifdef FILAMENTCHANGEENABLE
       case 600: //Pause for filament change X[pos] Y[pos] Z[relative lift] E[initial retract] L[later retract distance for removal]
         {
@@ -2189,6 +2190,7 @@ void process_commands()
           disable_e0();
           disable_e1();
           disable_e2();
+          card.pause = true;
           while (card.pause) {
             manage_heater();
             manage_inactivity();
