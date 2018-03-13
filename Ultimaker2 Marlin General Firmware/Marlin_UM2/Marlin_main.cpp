@@ -275,6 +275,7 @@ Servo servos[NUM_SERVOS];
 #endif
 
 bool filament_sensor_empty;
+bool gcode_file_ok =false;
 //===========================================================================
 //=============================ROUTINES=============================
 //===========================================================================
@@ -433,7 +434,6 @@ void servo_init()
 #endif
 }
 
-
 void setup()
 {
   setup_killpin();
@@ -490,6 +490,13 @@ void setup()
   SET_OUTPUT(CONTROLLERFAN_PIN); //Set pin used for driver cooling fan
 #endif
 
+#if Configuration ==7
+
+//  enquecommand_P(PSTR("M92 E135"));
+  enquecommand_P(PSTR("M92 E145"));
+#endif
+
+
 }
 
 
@@ -543,6 +550,7 @@ void loop()
   checkHitEndstops();
   lcd_update();
   lifetime_stats_tick();
+
 }
 
 void get_command()
@@ -2217,7 +2225,7 @@ void process_commands()
           }
         }
         break;
-
+      
       case 605: // M605 store current set values
         {
           uint8_t tmp_select;
@@ -2288,6 +2296,26 @@ void process_commands()
         }
         break;
 #endif//ENABLE_ULTILCD2
+
+
+#ifdef USE_PASSCODE
+// list all mutually exclusive configurations here, this will work as a
+// way to prevent people with authorisation on some printers from using others
+#if Configuration ==1       
+      case 820:
+#elif Configuration ==2
+      case 821:
+#elif Configuration ==8
+      case 822:
+#endif 
+     
+
+      {
+        gcode_file_ok = true;
+      }
+      break;
+
+#endif
 
       case 907: // M907 Set digital trimpot motor current using axis codes.
         {
@@ -3131,16 +3159,14 @@ void check_filament_sensor() {
 
 int filament_bowden_length() {
   int bowden_length = 0;
+  bowden_length = FILAMANT_BOWDEN_LENGTH;
+  
 #ifdef DIFFERENT_FILAMENT_PATH_LENGTH
-
   if (active_extruder == 0)
     bowden_length = FILAMANT_BOWDEN_LENGTH_E0;
 
   else if (active_extruder == 1)
     bowden_length = FILAMANT_BOWDEN_LENGTH_E1;
-
-#else
-  bowden_length = FILAMANT_BOWDEN_LENGTH;
 #endif
 
   return bowden_length;

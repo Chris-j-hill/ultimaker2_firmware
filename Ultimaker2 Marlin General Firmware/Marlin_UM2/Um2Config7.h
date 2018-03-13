@@ -1,9 +1,7 @@
 #ifndef UM2_7_H
 #define UM2_7_H
 
-#error "Confirm this configuration file is complete, delete this line if it is"
 
-// !!!!  fully not implemented   !!!!
  // 2 bowden extruders, no filament sensor
 
 // This configuration file contains the basic settings.
@@ -69,7 +67,7 @@
 
 // This defines the number of extruders
 #ifndef EXTRUDERS
-#define EXTRUDERS 1
+#define EXTRUDERS 2
 #endif
 
 //// The following define selects which power supply you have. Please choose the one that matches your setup
@@ -328,7 +326,7 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define INVERT_Y_DIR false    // for Mendel set to true, for Orca set to false
 #define INVERT_Z_DIR true     // for Mendel set to false, for Orca set to true
 #define INVERT_E0_DIR false   // for direct drive extruder v9 set to true, for geared extruder set to false
-#define INVERT_E1_DIR true    // for direct drive extruder v9 set to true, for geared extruder set to false
+#define INVERT_E1_DIR true   // for direct drive extruder v9 set to true, for geared extruder set to false
 #define INVERT_E2_DIR false   // for direct drive extruder v9 set to true, for geared extruder set to false
 
 // ENDSTOP SETTINGS:
@@ -368,7 +366,9 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 
 // default settings
 
-#define DEFAULT_AXIS_STEPS_PER_UNIT   {80.0,80.0,200,282}  // default steps per unit for ultimaker2
+//#define DEFAULT_AXIS_STEPS_PER_UNIT   {80.0,80.0,200,282/2}  // default steps per unit for ultimaker2
+
+#define DEFAULT_AXIS_STEPS_PER_UNIT   {80.0,80.0,200,135}  // default steps per unit for ultimaker2
 #define DEFAULT_MAX_FEEDRATE          {300, 300, 40, 45}    // (mm/sec)
 #define DEFAULT_MAX_ACCELERATION      {3000,3000,100,40000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 
@@ -378,16 +378,13 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 // Offset of the extruders (uncomment if using more than one and relying on firmware to position when changing).
 // The offset has to be X=0, Y=0 for the extruder 0 hotend (default extruder).
 // For the other hotends it is their distance from the extruder 0 hotend.
-// #define EXTRUDER_OFFSET_X {0.0, 20.00} // (in mm) for each extruder, offset of the hotend on the X axis
-// #define EXTRUDER_OFFSET_Y {0.0, 5.00}  // (in mm) for each extruder, offset of the hotend on the Y axis
+ #define EXTRUDER_OFFSET_X {0.0, 18.00} // (in mm) for each extruder, offset of the hotend on the X axis
+ #define EXTRUDER_OFFSET_Y {0.0, 0.00}  // (in mm) for each extruder, offset of the hotend on the Y axis
 
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instantaneously)
 #define DEFAULT_XYJERK                15.0    // (mm/sec)
 #define DEFAULT_ZJERK                 0.4     // (mm/sec)
 #define DEFAULT_EJERK                 5.0    // (mm/sec)
-
-//Length of the bowden tube. Used for the material load/unload procedure.
-#define FILAMANT_BOWDEN_LENGTH        85
 
 //sensor enabled if defined, comment out to disable
 //#define FILAMENT_RUNOUT_SENSOR
@@ -397,6 +394,26 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define filament_sensor_pullup                // define if using internal pullup
 #define filament_sensor_pin_inverting true    // set to true if HIGH means no filament
 #endif
+
+
+//#define DIFFERENT_FILAMENT_PATH_LENGTH    //if defined firmware uses the two bowden lengths, can be different, if not defiend, bowden lengths assumed the same
+
+//Length of the bowden tube. Used for the material load/unload procedure.
+#define FILAMANT_BOWDEN_LENGTH        705
+
+#ifdef DIFFERENT_FILAMENT_PATH_LENGTH //takes priority over the above length paramater, set to bowden path lengths of two extruders
+#if EXTRUDERS < 2
+#error "defined multiple bowden retract lengths but only one extruder defined"
+#endif
+#define FILAMANT_BOWDEN_LENGTH_E0 705
+#define FILAMANT_BOWDEN_LENGTH_E1 705
+#endif
+
+//added menus
+#define DISABLE_STEPPER_MENU_OPTION_ENABLE  //enable stepper disable menu item in maintanance->advanced->move axis
+#define MOVE_AXIS_MENU_OPTION_ENABLE  // enable menu item in maintanance->advanced->move axis
+#define ADVANCED_MATERIAL_CHANGE  //enable nozzle selection when changing material mid print, if disabled, will simply change active extruder
+
 //===========================================================================
 //=============================Additional Features===========================
 //===========================================================================

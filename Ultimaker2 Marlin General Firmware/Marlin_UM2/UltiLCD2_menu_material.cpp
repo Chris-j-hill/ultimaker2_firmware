@@ -56,8 +56,7 @@ void lcd_change_to_menu_change_material_select_extruder(menuFunc_t return_menu)
 {
   
     post_change_material_menu = return_menu; 
-    //lcd_change_to_menu_change_material(lcd_change_to_menu_change_material_return);  <- call this line after choosing nozzle
-    //preheat_end_time = millis() + (unsigned long)material[active_extruder].change_preheat_wait_time * 1000L;
+
     lcd_change_to_menu(lcd_change_to_menu_change_choose_extruder);
 }
 

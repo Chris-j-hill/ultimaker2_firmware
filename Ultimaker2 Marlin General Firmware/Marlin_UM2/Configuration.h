@@ -16,7 +16,7 @@
 //9 = pen mod
 
 #ifndef Configuration
-#define Configuration 11
+#define Configuration 8
 #endif
 
 
