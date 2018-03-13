@@ -43,12 +43,15 @@ void lcd_change_to_menu_change_choose_extruder();
 void lcd_change_to_menu_change_material_select_extruder(menuFunc_t return_menu);
 bool primed = false;
 static bool pauseRequested = false;
+void lcd_menu_tune_prime_extruder();
 
 extern bool gcode_file_ok;
 bool bad_file_passcode_abort_print;
-uint32_t print_started_timer =0;
+uint32_t print_started_timer = 0;
 
-
+byte active_extruder_placeholder = 0;  //store active extruder number and temperature
+int active_extruder_starting_temp = 45;
+float active_extruder_material_position = 0.0;
 
 void lcd_clear_cache()
 {
@@ -381,7 +384,8 @@ void lcd_menu_print_select()
       if (!card.filenameIsDir)
       {
         //Start print
-        print_started_timer = millis();   //log time of starting print for passcode if used
+        print_started_timer = millis();   // log time of starting print for passcode if used
+        gcode_file_ok = false;            // ensure the passcode is required for each print
         active_extruder = 0;
         card.openFile(card.filename, true);
         if (card.isFileOpen() && !is_command_queued())
@@ -573,12 +577,12 @@ void lcd_menu_print_printing()
   {
 
 #ifdef USE_PASSCODE
-    if (!gcode_file_ok && (millis() - print_started_timer)>15000 && printing_state != PRINT_STATE_HEATING_BED && printing_state !=PRINT_STATE_HEATING) {   //if when this menu is displayed has this line been changed
+    if (!gcode_file_ok && (millis() - print_started_timer) > 15000 && printing_state != PRINT_STATE_HEATING_BED && printing_state != PRINT_STATE_HEATING) { //if when this menu is displayed has this line been changed
       bad_file_passcode_abort_print = true;
-      print_started_timer =0;
-      lcd_change_to_menu(lcd_menu_print_abort);   
+      print_started_timer = 0;
+      lcd_change_to_menu(lcd_menu_print_abort);
     }
-#endif   
+#endif
     lcd_question_screen(lcd_menu_print_tune, NULL, PSTR("TUNE"), lcd_menu_print_printing, lcd_menu_print_pause, PSTR("PAUSE"));
     uint8_t progress = card.getFilePos() / ((card.getFileSize() + 123) / 124);
     char buffer[16];
@@ -804,6 +808,16 @@ static char* tune_item_callback(uint8_t nr)
     strcpy_P(c, PSTR("Retraction"));
   else if (nr == 5 + BED_MENU_OFFSET + EXTRUDERS * 2)
     strcpy_P(c, PSTR("LED Brightness"));
+#if EXTRUDER>1
+
+  else if (nr == 6 + BED_MENU_OFFSET + EXTRUDERS * 2)
+    strcpy_P(c, PSTR("Prime Nozzle E1"));
+  else if (nr == 7 + BED_MENU_OFFSET + EXTRUDERS * 2)
+    strcpy_P(c, PSTR("Prime Nozzle E2"));
+#else
+  else if (nr == 6 + BED_MENU_OFFSET + EXTRUDERS * 2)
+    strcpy_P(c, PSTR("Prime Nozzle"));
+#endif
   return c;
 }
 
@@ -904,7 +918,16 @@ void lcd_menu_print_tune_heatup_nozzle1()
 
 static void lcd_menu_print_tune()
 {
-  lcd_scroll_menu(PSTR("TUNE"), 6 + BED_MENU_OFFSET + EXTRUDERS * 2, tune_item_callback, tune_item_details_callback);
+
+  byte num_items_added = 0;
+#ifdef TUNE_MENU_MOVE_MATERIAL
+  num_items_added++;
+#if EXTRUDERS>1
+  num_items_added++;
+#endif
+#endif
+
+  lcd_scroll_menu(PSTR("TUNE"), 6 + BED_MENU_OFFSET + num_items_added + EXTRUDERS * 2, tune_item_callback, tune_item_details_callback);
   if (lcd_lib_button_pressed)
   {
     if (IS_SELECTED_SCROLL(0))
@@ -940,8 +963,96 @@ static void lcd_menu_print_tune()
       lcd_change_to_menu(lcd_menu_print_tune_retraction);
     else if (IS_SELECTED_SCROLL(5 + BED_MENU_OFFSET + EXTRUDERS * 2))
       LCD_EDIT_SETTING(led_brightness_level, "Brightness", "%", 0, 100);
+
+
+
+#ifdef TUNE_MENU_MOVE_MATERIAL
+    else if (IS_SELECTED_SCROLL(6 + BED_MENU_OFFSET + EXTRUDERS * 2)) {
+
+      lcd_menu_print_pause();
+      active_extruder_placeholder = active_extruder;    //store active extruder number
+      active_extruder = 0;
+      active_extruder_material_position = current_position[E_AXIS];
+      active_extruder_starting_temp = target_temperature[active_extruder]; //store starting temp of this extruder
+      target_temperature[active_extruder] = material[active_extruder].temperature;
+#ifdef SAFER_EXTRUDE_MATERIAL_HEATUP
+      starting_temp = current_temperature[active_extruder];
+      extrude_start_time = millis();
+#endif
+      lcd_change_to_menu(lcd_menu_tune_prime_extruder, 0);
+    }
+
+
+#if EXTRUDERS>1
+    else if (IS_SELECTED_SCROLL(7 + BED_MENU_OFFSET + EXTRUDERS * 2)) {
+      lcd_menu_print_pause();
+      active_extruder_placeholder = active_extruder;    //store active extruder number
+      active_extruder = 1;
+      active_extruder_material_position = current_position[E_AXIS];
+      active_extruder_starting_temp = target_temperature[active_extruder]; //store starting temp of this extruder
+      target_temperature[active_extruder] = material[active_extruder].temperature;
+#ifdef SAFER_EXTRUDE_MATERIAL_HEATUP
+      starting_temp = current_temperature[active_extruder];
+      extrude_start_time = millis();
+#endif
+      lcd_change_to_menu(lcd_menu_tune_prime_extruder, 0);
+    }
+#endif
+#endif
   }
 }
+
+void lcd_menu_tune_prime_extruder()
+{
+  if (card.pause) {
+    if (lcd_lib_encoder_pos / ENCODER_TICKS_PER_SCROLL_MENU_ITEM != 0)
+    {
+      if (printing_state == PRINT_STATE_NORMAL && movesplanned() < 3)
+      {
+        current_position[E_AXIS] += lcd_lib_encoder_pos * 0.1;
+        plan_buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], 10, active_extruder);
+        lcd_lib_encoder_pos = 0;
+      }
+    }
+  }
+  if (lcd_lib_button_pressed)
+  {
+
+    target_temperature[active_extruder_placeholder] = active_extruder_starting_temp;
+    active_extruder = active_extruder_placeholder;    //change active extruder back
+    char buffer[16];
+
+    current_position[E_AXIS] = active_extruder_material_position-TUNE_PRIMING_RESTART_DISTANCE;
+    plan_set_e_position(current_position[E_AXIS]);
+
+    sprintf_P(buffer, PSTR("M104 S%i"),  target_temperature[active_extruder_placeholder]); //set position back to counter pause retraction
+    enquecommand(buffer);
+//    enquecommand_P("G1 E20");
+    lcd_change_to_menu(previousMenu, previousEncoderPos);
+
+  }
+#ifdef SAFER_EXTRUDE_MATERIAL_HEATUP
+  check_for_extruder_temp_error();    // check for temp error if not heating, eg if heater cartridge not connected properly
+  // Note: will not detect broken/disconnected sensors, assume that was caught on startup
+#endif
+  lcd_lib_clear();
+  char buffer[16];
+  int_to_string(int(dsp_temperature[active_extruder]), buffer, PSTR("C/"));
+  int_to_string(int(target_temperature[active_extruder]), buffer + strlen(buffer), PSTR("C"));
+  if (card.pause) {
+    lcd_lib_draw_string_centerP(20, PSTR("Nozzle temperature:"));
+    lcd_lib_draw_string_centerP(40, PSTR("Rotate to extrude"));
+    lcd_lib_draw_string_center(30, buffer);
+  }
+  else {
+    lcd_lib_draw_string_centerP(20, PSTR("Please wait until"));
+    lcd_lib_draw_string_centerP(40, PSTR("print paused"));
+  }
+  lcd_lib_draw_string_centerP(53, PSTR("Click to return"));
+  lcd_lib_update_screen();
+}
+
+
 
 static char* lcd_retraction_item(uint8_t nr)
 {

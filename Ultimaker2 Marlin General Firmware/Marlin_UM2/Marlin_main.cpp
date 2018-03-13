@@ -2299,17 +2299,22 @@ void process_commands()
 
 
 #ifdef USE_PASSCODE
-// list all mutually exclusive configurations here, this will work as a
+// list all mutually exclusive printer configurations here, this will work as a
 // way to prevent people with authorisation on some printers from using others
-#if Configuration ==1       
+#if (Configuration == 1  || Configuration == 2 || Configuration == 3 || Configuration == 4 || Configuration == 5 || Configuration == 7)
       case 820:
-#elif Configuration ==2
+#endif
+#if Configuration == 9    //9 = pen mod with adjusted dimensions
       case 821:
-#elif Configuration ==8
+#endif
+
+#if Configuration == 8    // 13/2/18 testing passcode
       case 822:
 #endif 
+#if Configuration == 11   // ollson block upgraded printers
+      case 823:
+#endif 
      
-
       {
         gcode_file_ok = true;
       }

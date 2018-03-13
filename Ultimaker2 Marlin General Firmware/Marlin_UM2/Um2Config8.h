@@ -6,6 +6,12 @@
 // !!!!  fully not implemented   !!!!
  // 2 bowden extruders, enabled filament sensor
 
+//#define USE_PASSCODE
+#define TUNE_MENU_MOVE_MATERIAL
+#ifdef TUNE_MENU_MOVE_MATERIAL
+#define TUNE_PRIMING_RESTART_DISTANCE 1
+#endif
+
 // This configuration file contains the basic settings.
 // Advanced settings can be found in Configuration_adv.h
 // BASIC SETTINGS: select your board type, temperature sensor type, axis scaling, and endstop configuration
@@ -398,7 +404,6 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define filament_sensor_pin_inverting true    // set to true if HIGH means no filament
 #endif
 
-//#define USE_PASSCODE
 //===========================================================================
 //=============================Additional Features===========================
 //===========================================================================

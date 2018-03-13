@@ -6,6 +6,10 @@
 // 1 bowden extruder, no filament sensor
 
 
+//#define USE_PASSCODE
+
+
+
 // This configuration file contains the basic settings.
 // Advanced settings can be found in Configuration_adv.h
 // BASIC SETTINGS: select your board type, temperature sensor type, axis scaling, and endstop configuration

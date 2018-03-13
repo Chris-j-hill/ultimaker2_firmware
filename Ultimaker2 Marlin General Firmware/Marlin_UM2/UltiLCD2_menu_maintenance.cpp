@@ -117,9 +117,9 @@ static char* lcd_advanced_item(uint8_t nr)
 #if EXTRUDERS < 2
     strcpy_P(card.longFilename, PSTR("Move material"));
 #else
-    strcpy_P(card.longFilename, PSTR("Move material (1)"));
+    strcpy_P(card.longFilename, PSTR("Move material (E1)"));
   else if (nr == 6 +  added_items + BED_MENU_OFFSET + EXTRUDERS * 2)
-    strcpy_P(card.longFilename, PSTR("Move material (2)"));
+    strcpy_P(card.longFilename, PSTR("Move material (E2)"));
 #endif
   else if (nr == 5 +  added_items + BED_MENU_OFFSET + EXTRUDERS * 3)
     strcpy_P(card.longFilename, PSTR("Set fan speed"));

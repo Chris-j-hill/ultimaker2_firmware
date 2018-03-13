@@ -11,8 +11,8 @@
 //4 = direct drive modification, enabled filament sensor
 //5 = 1 bowden and 1 direct drive extruder, no filament sensor
 //6 =  
-//7 =  
-//8 =  
+//7 = 2 bowdens using 1.8 degree extruder motors 
+//8 = testing
 //9 = pen mod
 
 #ifndef Configuration
