@@ -3005,26 +3005,39 @@ void setPwmFrequency(uint8_t pin, int val)
 bool setTargetedHotend(int code) {
   tmp_extruder = active_extruder;
   if (code_seen('T')) {
-    tmp_extruder = code_value();
-    if (tmp_extruder >= EXTRUDERS) {
-      SERIAL_ECHO_START;
-      switch (code) {
-        case 104:
-          SERIAL_ECHOPGM(MSG_M104_INVALID_EXTRUDER);
-          break;
-        case 105:
-          SERIAL_ECHOPGM(MSG_M105_INVALID_EXTRUDER);
-          break;
-        case 109:
-          SERIAL_ECHOPGM(MSG_M109_INVALID_EXTRUDER);
-          break;
-        case 218:
-          SERIAL_ECHOPGM(MSG_M218_INVALID_EXTRUDER);
-          break;
-      }
-      SERIAL_ECHOLN(tmp_extruder);
-      return true;
+#ifdef DUAL_EXTRUDER_PICK_NOZZLE
+#if EXTRUDERS >1
+    if (nozzle_has_been_selected){  //trying to set nozzle but nozzle already selected, ignore
+      tmp_extruder = active_extruder;
     }
+    else{
+      tmp_extruder = code_value();
+    }
+
+#endif
+#else
+    tmp_extruder = code_value();
+#endif
+
+        if (tmp_extruder >= EXTRUDERS) {
+          SERIAL_ECHO_START;
+          switch (code) {
+            case 104:
+              SERIAL_ECHOPGM(MSG_M104_INVALID_EXTRUDER);
+              break;
+            case 105:
+              SERIAL_ECHOPGM(MSG_M105_INVALID_EXTRUDER);
+              break;
+            case 109:
+              SERIAL_ECHOPGM(MSG_M109_INVALID_EXTRUDER);
+              break;
+            case 218:
+              SERIAL_ECHOPGM(MSG_M218_INVALID_EXTRUDER);
+              break;
+          }
+          SERIAL_ECHOLN(tmp_extruder);
+          return true;
+        }
   }
   return false;
 }
