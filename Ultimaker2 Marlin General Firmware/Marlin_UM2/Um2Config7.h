@@ -10,8 +10,7 @@
 
 
 
-//#define USE_PASSCODE
-
+#define USE_PASSCODE
 
 
 // User-specified version info of this build to display in [Pronterface, etc] terminal window during
@@ -419,7 +418,16 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define DISABLE_STEPPER_MENU_OPTION_ENABLE  //enable stepper disable menu item in maintanance->advanced->move axis
 #define MOVE_AXIS_MENU_OPTION_ENABLE  // enable menu item in maintanance->advanced->move axis
 #define ADVANCED_MATERIAL_CHANGE  //enable nozzle selection when changing material mid print, if disabled, will simply change active extruder
+#define TUNE_MENU_MOVE_MATERIAL
 
+#ifdef TUNE_MENU_MOVE_MATERIAL
+#define TUNE_PRIMING_RESTART_DISTANCE 1
+#else 
+#define TUNE_PRIMING_RESTART_DISTANCE 0
+#endif
+
+#define DUAL_NOZZLE_TEMP_OFFSET
+#define DUAL_EXTRUDER_PICK_NOZZLE
 //===========================================================================
 //=============================Additional Features===========================
 //===========================================================================

@@ -801,7 +801,6 @@ static void lcd_menu_maintenance_move_selected_axis()    //move selected axis wi
   if (lcd_lib_encoder_pos / ENCODER_TICKS_PER_SCROLL_MENU_ITEM != 0)
   {
 
-
     if (printing_state == PRINT_STATE_NORMAL && movesplanned() < 3)
     {
       if (selected_axis == 1)
@@ -845,12 +844,6 @@ static void lcd_menu_maintenance_move_selected_axis()    //move selected axis wi
   {
     lcd_change_to_menu(lcd_menu_maintenance_move_axis, 0);
   }
-  //    if (lcd_lib_button_pressed)
-  //    {
-  //        set_extrude_min_temp(EXTRUDE_MINTEMP);
-  //        target_temperature[active_extruder] = 0;
-  //        lcd_change_to_menu(previousMenu, previousEncoderPos);
-  //    }
 
   lcd_lib_draw_string_centerP(20, PSTR("Position:"));
   lcd_lib_draw_string_centerP(40, PSTR("Rotate to Move"));

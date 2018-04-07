@@ -9,7 +9,7 @@
 // BASIC SETTINGS: select your board type, temperature sensor type, axis scaling, and endstop configuration
 
 
-//#define USE_PASSCODE
+#define USE_PASSCODE
 
 
 // User-specified version info of this build to display in [Pronterface, etc] terminal window during

@@ -6,10 +6,12 @@
 // !!!!  fully not implemented   !!!!
  // 2 bowden extruders, enabled filament sensor
 
-//#define USE_PASSCODE
+#define USE_PASSCODE
 #define TUNE_MENU_MOVE_MATERIAL
 #ifdef TUNE_MENU_MOVE_MATERIAL
 #define TUNE_PRIMING_RESTART_DISTANCE 1
+#else 
+#define TUNE_PRIMING_RESTART_DISTANCE 0
 #endif
 
 // This configuration file contains the basic settings.

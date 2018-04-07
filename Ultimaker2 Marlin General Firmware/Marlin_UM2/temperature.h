@@ -24,12 +24,16 @@
 #include "Marlin.h"
 #include "planner.h"
 #ifdef PID_ADD_EXTRUSION_RATE
-  #include "stepper.h"
+#include "stepper.h"
 #endif
 
 // public functions
 void tp_init();  //initialise the heating
 void manage_heater(); //it is critical that this is called periodically.
+
+//extern int dual_nozzle_temp_offset0;
+//extern int dual_nozzle_temp_offset1;
+
 
 // low level conversion routines
 // do not use these routines and variables outside of temperature.cpp
@@ -38,19 +42,19 @@ extern float current_temperature[EXTRUDERS];
 extern int target_temperature_bed;
 extern float current_temperature_bed;
 #ifdef TEMP_SENSOR_1_AS_REDUNDANT
-  extern float redundant_temperature;
+extern float redundant_temperature;
 #endif
 
 #ifdef PIDTEMP
-  extern float Kp,Ki,Kd,Kc;
-  float scalePID_i(float i);
-  float scalePID_d(float d);
-  float unscalePID_i(float i);
-  float unscalePID_d(float d);
+extern float Kp, Ki, Kd, Kc;
+float scalePID_i(float i);
+float scalePID_d(float d);
+float unscalePID_i(float i);
+float unscalePID_d(float d);
 
 #endif
 #ifdef PIDTEMPBED
-  extern float bedKp,bedKi,bedKd;
+extern float bedKp, bedKi, bedKd;
 #endif
 
 //high level conversion routines, for use outside of temperature.cpp
@@ -74,7 +78,19 @@ FORCE_INLINE float degTargetBed() {
 };
 
 FORCE_INLINE void setTargetHotend(const float &celsius, uint8_t extruder) {
+//
+//#if EXTRUDERS > 1  && defined(DUAL_NOZZLE_TEMP_OFFSET)
+//  if (extruder == 0 && active_extruder == 0)
+//    target_temperature[extruder] = celsius + dual_nozzle_temp_offset0;
+//  else if (extruder == 1 && active_extruder == 1)
+//    target_temperature[extruder] = celsius + dual_nozzle_temp_offset1;
+//  else
+//    target_temperature[extruder] = celsius;
+//
+//#else
   target_temperature[extruder] = celsius;
+//#endif
+
   if (target_temperature[extruder] >= HEATER_0_MAXTEMP - 15)
     target_temperature[extruder] = HEATER_0_MAXTEMP - 15;
 };
@@ -87,7 +103,7 @@ FORCE_INLINE void setTargetBed(const float &celsius) {
 #endif
 };
 
-FORCE_INLINE bool isHeatingHotend(uint8_t extruder){
+FORCE_INLINE bool isHeatingHotend(uint8_t extruder) {
   return target_temperature[extruder] > current_temperature[extruder];
 };
 
@@ -137,15 +153,15 @@ void disable_heater();
 void setWatch();
 void updatePID();
 
-FORCE_INLINE void autotempShutdown(){
- #ifdef AUTOTEMP
- if(autotemp_enabled)
- {
-  autotemp_enabled=false;
-  if(degTargetHotend(active_extruder)>autotemp_min)
-    setTargetHotend(0,active_extruder);
- }
- #endif
+FORCE_INLINE void autotempShutdown() {
+#ifdef AUTOTEMP
+  if (autotemp_enabled)
+  {
+    autotemp_enabled = false;
+    if (degTargetHotend(active_extruder) > autotemp_min)
+      setTargetHotend(0, active_extruder);
+  }
+#endif
 }
 
 void PID_autotune(float temp, int extruder, int ncycles);

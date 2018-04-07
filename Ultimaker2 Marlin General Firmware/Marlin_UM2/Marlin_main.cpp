@@ -275,7 +275,14 @@ Servo servos[NUM_SERVOS];
 #endif
 
 bool filament_sensor_empty;
-bool gcode_file_ok =false;
+bool gcode_file_ok = false;
+bool nozzle_has_been_selected = false;
+
+
+extern int dual_nozzle_temp_offset0;
+extern int dual_nozzle_temp_offset1;
+
+
 //===========================================================================
 //=============================ROUTINES=============================
 //===========================================================================
@@ -326,14 +333,14 @@ void clear_command_queue()
   }
 }
 
-//adds an command to the main command buffer
+//adds a command to the main command buffer
 //thats really done in a non-safe way.
 //needs overworking someday
 void enquecommand(const char *cmd)
 {
   if (buflen < BUFSIZE)
   {
-    //this is dangerous if a mixing of serial and this happsens
+    //this is dangerous if a mixing of serial and this happens
     strcpy(&(cmdbuffer[bufindw][0]), cmd);
     SERIAL_ECHO_START;
     SERIAL_ECHOPGM("enqueing \"");
@@ -348,7 +355,7 @@ void enquecommand_P(const char *cmd)
 {
   if (buflen < BUFSIZE)
   {
-    //this is dangerous if a mixing of serial and this happsens
+    //this is dangerous if a mixing of serial and this happens
     strcpy_P(&(cmdbuffer[bufindw][0]), cmd);
     SERIAL_ECHO_START;
     SERIAL_ECHOPGM("enqueing \"");
@@ -492,7 +499,7 @@ void setup()
 
 #if Configuration ==7
 
-//  enquecommand_P(PSTR("M92 E135"));
+  //  enquecommand_P(PSTR("M92 E135"));
   enquecommand_P(PSTR("M92 E145"));
 #endif
 
@@ -502,7 +509,7 @@ void setup()
 
 void loop()
 {
-  if (buflen < (BUFSIZE - 1))
+  if (buflen < (BUFSIZE - 1))   //buflen is number of commands stored in buffer, difference between bufindr and bufindw
     get_command();
 #ifdef SDSUPPORT
   card.checkautostart(false);
@@ -1368,7 +1375,23 @@ void process_commands()
         if (setTargetedHotend(104)) {
           break;
         }
-        if (code_seen('S')) setTargetHotend(code_value(), tmp_extruder);
+        if (code_seen('S')) {
+#if EXTRUDERS > 1
+#ifdef DUAL_NOZZLE_TEMP_OFFSET
+          if (tmp_extruder == 0 && active_extruder == 0)
+            setTargetHotend(code_value() + dual_nozzle_temp_offset0, tmp_extruder);
+          else if (tmp_extruder == 1 && active_extruder == 1)
+            setTargetHotend(code_value() + dual_nozzle_temp_offset1, tmp_extruder);
+          else
+            setTargetHotend(code_value(), tmp_extruder);
+#else
+          setTargetHotend(code_value(), tmp_extruder);
+#endif
+#else
+          setTargetHotend(code_value(), tmp_extruder);
+
+#endif
+        }
         setWatch();
         break;
       case 140: // M140 set bed temp
@@ -1413,7 +1436,24 @@ void process_commands()
 #ifdef AUTOTEMP
           autotemp_enabled = false;
 #endif
-          if (code_seen('S')) setTargetHotend(code_value(), tmp_extruder);
+          if (code_seen('S')) {
+
+#if EXTRUDERS > 1
+#ifdef DUAL_NOZZLE_TEMP_OFFSET
+            if (tmp_extruder == 0 && active_extruder == 0)
+              setTargetHotend(code_value() + dual_nozzle_temp_offset0, tmp_extruder);
+            else if (tmp_extruder == 1 && active_extruder == 1)
+              setTargetHotend(code_value() + dual_nozzle_temp_offset1, tmp_extruder);
+            else
+              setTargetHotend(code_value(), tmp_extruder);
+#else
+            setTargetHotend(code_value(), tmp_extruder);
+#endif
+#else
+            setTargetHotend(code_value(), tmp_extruder);
+
+#endif
+          }
 #ifdef AUTOTEMP
           if (code_seen('S')) autotemp_min = code_value();
           if (code_seen('B')) autotemp_max = code_value();
@@ -2225,7 +2265,7 @@ void process_commands()
           }
         }
         break;
-      
+
       case 605: // M605 store current set values
         {
           uint8_t tmp_select;
@@ -2299,8 +2339,8 @@ void process_commands()
 
 
 #ifdef USE_PASSCODE
-// list all mutually exclusive printer configurations here, this will work as a
-// way to prevent people with authorisation on some printers from using others
+        // list all mutually exclusive printer configurations here, this will work as a
+        // way to prevent people with authorisation on some printers from using others
 #if (Configuration == 1  || Configuration == 2 || Configuration == 3 || Configuration == 4 || Configuration == 5 || Configuration == 7)
       case 820:
 #endif
@@ -2310,16 +2350,22 @@ void process_commands()
 
 #if Configuration == 8    // 13/2/18 testing passcode
       case 822:
-#endif 
+#endif
 #if Configuration == 11   // ollson block upgraded printers
       case 823:
-#endif 
-     
-      {
-        gcode_file_ok = true;
-      }
-      break;
+#endif
 
+        {
+          gcode_file_ok = true;
+        }
+        break;
+
+#endif
+
+#ifdef DUAL_EXTRUDER_PICK_NOZZLE
+      case 830:     //code to avoid pick nozzle menu on print start
+        nozzle_has_been_selected = true;
+        break;
 #endif
 
       case 907: // M907 Set digital trimpot motor current using axis codes.
@@ -3165,7 +3211,7 @@ void check_filament_sensor() {
 int filament_bowden_length() {
   int bowden_length = 0;
   bowden_length = FILAMANT_BOWDEN_LENGTH;
-  
+
 #ifdef DIFFERENT_FILAMENT_PATH_LENGTH
   if (active_extruder == 0)
     bowden_length = FILAMANT_BOWDEN_LENGTH_E0;

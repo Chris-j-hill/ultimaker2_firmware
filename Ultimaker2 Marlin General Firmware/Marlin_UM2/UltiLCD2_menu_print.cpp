@@ -48,10 +48,18 @@ void lcd_menu_tune_prime_extruder();
 extern bool gcode_file_ok;
 bool bad_file_passcode_abort_print;
 uint32_t print_started_timer = 0;
+extern bool nozzle_has_been_selected;
+bool waiting_for_nozzle_selection = false;
 
 byte active_extruder_placeholder = 0;  //store active extruder number and temperature
 int active_extruder_starting_temp = 45;
 float active_extruder_material_position = 0.0;
+byte pause_location_in_buffer = BUFSIZE;
+extern int bufindr = 0;
+extern int bufindw = 0;
+
+int dual_nozzle_temp_offset0 = 0;
+int dual_nozzle_temp_offset1 = 0;
 
 void lcd_clear_cache()
 {
@@ -386,6 +394,7 @@ void lcd_menu_print_select()
         //Start print
         print_started_timer = millis();   // log time of starting print for passcode if used
         gcode_file_ok = false;            // ensure the passcode is required for each print
+        nozzle_has_been_selected = false; // ensure that previous nozzle selection not carried over to this print
         active_extruder = 0;
         card.openFile(card.filename, true);
         if (card.isFileOpen() && !is_command_queued())
@@ -544,118 +553,177 @@ void lcd_menu_print_printing()
 {
   if (card.pause)
   {
-#if EXTRUDERS > 1 && defined(ADVANCED_MATERIAL_CHANGE)
-    lcd_tripple_menu(PSTR("RESUME|PRINT"), PSTR("MATERIAL|SETTINGS"), PSTR("TUNE"));
-#else
-    lcd_tripple_menu(PSTR("RESUME|PRINT"), PSTR("CHANGE|MATERIAL"), PSTR("TUNE"));
-#endif
-    if (lcd_lib_button_pressed)
-    {
-      if (IS_SELECTED_MAIN(0) && movesplanned() < 1)
+
+    if (waiting_for_nozzle_selection) {
+      lcd_tripple_menu(PSTR("USE|PRIMARY"), PSTR("USE|SECONDARY"), PSTR("DUAL COLOUR"));
+      char buffer2[16];
+      int target_temp_placeholder;
+      print_started_timer = millis(); //keep resetting this timer while waiting for selection so as not to interfere with passcode 
+      if (lcd_lib_button_pressed)
       {
-        card.pause = false;
-        if (card.sdprinting)
-        {
-          primed = true;
+        if (IS_SELECTED_MAIN(0)) {
+          sprintf_P(buffer2, PSTR("M109 S%i T0"),  target_temperature[active_extruder]); //queue this command as well as set to wait until stabilised
+          enquecommand(buffer2);
+          target_temp_placeholder = target_temperature[active_extruder];
+          target_temperature[active_extruder] = 0;
+          active_extruder = 0;
+          target_temperature[active_extruder] = target_temp_placeholder;
+          card.pause = false;
+          waiting_for_nozzle_selection = false;
+          nozzle_has_been_selected = true;
+          lcd_lib_beep();
         }
-        lcd_lib_beep();
-      } else if (IS_SELECTED_MAIN(1) && movesplanned() < 1) {
+
+        else if (IS_SELECTED_MAIN(1)) {
+          sprintf_P(buffer2, PSTR("M109 S%i T1"),  target_temperature[active_extruder]); 
+          enquecommand(buffer2);
+          target_temp_placeholder = target_temperature[active_extruder];
+          target_temperature[active_extruder] = 0;
+          active_extruder = 1;
+          target_temperature[active_extruder] = target_temp_placeholder;
+          card.pause = false;
+          waiting_for_nozzle_selection = false;
+          nozzle_has_been_selected = true;
+          lcd_lib_beep();
+        }
+
+        else if (IS_SELECTED_MAIN(2)) {
+          waiting_for_nozzle_selection = false;
+          nozzle_has_been_selected = true;
+          card.pause = false;
+          lcd_lib_beep();
+        }
+      }
+    }
+    else if(card.pause){
 #if EXTRUDERS > 1 && defined(ADVANCED_MATERIAL_CHANGE)
-        temp_active_extruder = active_extruder;
-        temp_extruder_not_active_extruder = true;   //flag to indicate that the active extruder is changed
-        lcd_change_to_menu_change_material_select_extruder(lcd_change_to_menu_change_material_return); // choose extruder, switch this to the active material
+      lcd_tripple_menu(PSTR("RESUME|PRINT"), PSTR("MATERIAL|SETTINGS"), PSTR("TUNE"));
+#else
+      lcd_tripple_menu(PSTR("RESUME|PRINT"), PSTR("CHANGE|MATERIAL"), PSTR("TUNE"));
+#endif
+      if (lcd_lib_button_pressed)
+      {
+        if (IS_SELECTED_MAIN(0) && movesplanned() < 1)
+        {
+          card.pause = false;
+          if (card.sdprinting)
+          {
+            primed = true;
+          }
+          lcd_lib_beep();
+        } else if (IS_SELECTED_MAIN(1) && movesplanned() < 1) {
+#if EXTRUDERS > 1 && defined(ADVANCED_MATERIAL_CHANGE)
+          temp_active_extruder = active_extruder;
+          temp_extruder_not_active_extruder = true;   //flag to indicate that the active extruder is changed
+          lcd_change_to_menu_change_material_select_extruder(lcd_change_to_menu_change_material_return); // choose extruder, switch this to the active material
 
 #else
-        lcd_change_to_menu_change_material(lcd_change_to_menu_change_material_return); //original command
+          lcd_change_to_menu_change_material(lcd_change_to_menu_change_material_return); //original command
 #endif
+        }
+        else if (IS_SELECTED_MAIN(2))
+          lcd_change_to_menu(lcd_menu_print_tune);
       }
-      else if (IS_SELECTED_MAIN(2))
-        lcd_change_to_menu(lcd_menu_print_tune);
     }
   }
-  else
-  {
+
+#ifdef DUAL_EXTRUDER_PICK_NOZZLE
+#if EXTRUDERS > 1
+    else if (!nozzle_has_been_selected) { //if we havent processed the code M code 830, or the nozzle hasnt been selected below
+      card.pause = true;
+      char buffer3[16];
+//      sprintf_P(buffer3, PSTR("M601 X20 Y5 Z0 L%i"), int(END_OF_PRINT_RETRACTION));
+//      enquecommand(buffer3);
+      waiting_for_nozzle_selection = true;
+    }
+#endif
+#endif
+
+    else
+    {
 
 #ifdef USE_PASSCODE
-    if (!gcode_file_ok && (millis() - print_started_timer) > 15000 && printing_state != PRINT_STATE_HEATING_BED && printing_state != PRINT_STATE_HEATING) { //if when this menu is displayed has this line been changed
-      bad_file_passcode_abort_print = true;
-      print_started_timer = 0;
-      lcd_change_to_menu(lcd_menu_print_abort);
-    }
-#endif
-    lcd_question_screen(lcd_menu_print_tune, NULL, PSTR("TUNE"), lcd_menu_print_printing, lcd_menu_print_pause, PSTR("PAUSE"));
-    uint8_t progress = card.getFilePos() / ((card.getFileSize() + 123) / 124);
-    char buffer[16];
-    char* c;
-    switch (printing_state)
-    {
-      default:
-        lcd_lib_draw_string_centerP(20, PSTR("Printing:"));
-        lcd_lib_draw_string_center(30, LCD_CACHE_FILENAME(0));
-        break;
-      case PRINT_STATE_HEATING:
-#if EXTRUDERS>1   //display both temperatures
-        lcd_lib_draw_string_centerP(20, PSTR("Heating"));
-        c = int_to_string(dsp_temperature[0], buffer);
-        *c++ = '/';
-        c = int_to_string(target_temperature[0], c, PSTR(" "));
-        //            *c++ = ' ';
-        lcd_lib_draw_string_centerP(20, PSTR("Heating"));
-        c = int_to_string(dsp_temperature[1], c);
-        *c++ = '/';
-        c = int_to_string(target_temperature[1], c);
-        lcd_lib_draw_string_center(30, buffer);
-#else
-        lcd_lib_draw_string_centerP(20, PSTR("Heating"));
-        c = int_to_string(dsp_temperature[0], buffer, PSTR("C"));
-        *c++ = '/';
-        c = int_to_string(target_temperature[0], c, PSTR("C"));
-        lcd_lib_draw_string_center(30, buffer);
-#endif
-        break;
-      case PRINT_STATE_HEATING_BED:
-        lcd_lib_draw_string_centerP(20, PSTR("Heating buildplate"));
-        c = int_to_string(dsp_temperature_bed, buffer, PSTR("C"));
-        *c++ = '/';
-        c = int_to_string(target_temperature_bed, c, PSTR("C"));
-        lcd_lib_draw_string_center(30, buffer);
-        break;
-    }
-    float printTimeMs = (millis() - starttime);
-    float printTimeSec = printTimeMs / 1000L;
-    float totalTimeMs = float(printTimeMs) * float(card.getFileSize()) / float(card.getFilePos());
-    static float totalTimeSmoothSec;
-    totalTimeSmoothSec = (totalTimeSmoothSec * 999L + totalTimeMs / 1000L) / 1000L;
-    if (isinf(totalTimeSmoothSec))
-      totalTimeSmoothSec = totalTimeMs;
-
-    if (LCD_DETAIL_CACHE_TIME() == 0 && printTimeSec < 60)
-    {
-      totalTimeSmoothSec = totalTimeMs / 1000;
-      lcd_lib_draw_stringP(5, 10, PSTR("Time left unknown"));
-    } else {
-      unsigned long totalTimeSec;
-      if (printTimeSec < LCD_DETAIL_CACHE_TIME() / 2)
-      {
-        float f = float(printTimeSec) / float(LCD_DETAIL_CACHE_TIME() / 2);
-        if (f > 1.0)
-          f = 1.0;
-        totalTimeSec = float(totalTimeSmoothSec) * f + float(LCD_DETAIL_CACHE_TIME()) * (1 - f);
-      } else {
-        totalTimeSec = totalTimeSmoothSec;
+      if (!gcode_file_ok && (millis() - print_started_timer) > 15000 && printing_state != PRINT_STATE_HEATING_BED && printing_state != PRINT_STATE_HEATING) { //if when this menu is displayed has this line been changed
+        bad_file_passcode_abort_print = true;
+        print_started_timer = 0;
+        lcd_change_to_menu(lcd_menu_print_abort);
       }
-      unsigned long timeLeftSec;
-      if (printTimeSec > totalTimeSec)
-        timeLeftSec = 1;
-      else
-        timeLeftSec = totalTimeSec - printTimeSec;
-      int_to_time_string(timeLeftSec, buffer);
-      lcd_lib_draw_stringP(5, 10, PSTR("Time left"));
-      lcd_lib_draw_string(65, 10, buffer);
-    }
+#endif
 
-    lcd_progressbar(progress);
-  }
+      lcd_question_screen(lcd_menu_print_tune, NULL, PSTR("TUNE"), lcd_menu_print_printing, lcd_menu_print_pause, PSTR("PAUSE"));
+      uint8_t progress = card.getFilePos() / ((card.getFileSize() + 123) / 124);
+      char buffer[16];
+      char* c;
+      switch (printing_state)
+      {
+        default:
+          lcd_lib_draw_string_centerP(20, PSTR("Printing:"));
+          lcd_lib_draw_string_center(30, LCD_CACHE_FILENAME(0));
+          break;
+        case PRINT_STATE_HEATING:
+#if EXTRUDERS>1   //display both temperatures
+          lcd_lib_draw_string_centerP(20, PSTR("Heating"));
+          c = int_to_string(dsp_temperature[0], buffer);
+          *c++ = '/';
+          c = int_to_string(target_temperature[0], c, PSTR(" "));
+          //            *c++ = ' ';
+          lcd_lib_draw_string_centerP(20, PSTR("Heating"));
+          c = int_to_string(dsp_temperature[1], c);
+          *c++ = '/';
+          c = int_to_string(target_temperature[1], c);
+          lcd_lib_draw_string_center(30, buffer);
+#else
+          lcd_lib_draw_string_centerP(20, PSTR("Heating"));
+          c = int_to_string(dsp_temperature[0], buffer, PSTR("C"));
+          *c++ = '/';
+          c = int_to_string(target_temperature[0], c, PSTR("C"));
+          lcd_lib_draw_string_center(30, buffer);
+#endif
+          break;
+        case PRINT_STATE_HEATING_BED:
+          lcd_lib_draw_string_centerP(20, PSTR("Heating buildplate"));
+          c = int_to_string(dsp_temperature_bed, buffer, PSTR("C"));
+          *c++ = '/';
+          c = int_to_string(target_temperature_bed, c, PSTR("C"));
+          lcd_lib_draw_string_center(30, buffer);
+          break;
+      }
+      float printTimeMs = (millis() - starttime);
+      float printTimeSec = printTimeMs / 1000L;
+      float totalTimeMs = float(printTimeMs) * float(card.getFileSize()) / float(card.getFilePos());
+      static float totalTimeSmoothSec;
+      totalTimeSmoothSec = (totalTimeSmoothSec * 999L + totalTimeMs / 1000L) / 1000L;
+      if (isinf(totalTimeSmoothSec))
+        totalTimeSmoothSec = totalTimeMs;
+
+      if (LCD_DETAIL_CACHE_TIME() == 0 && printTimeSec < 60)
+      {
+        totalTimeSmoothSec = totalTimeMs / 1000;
+        lcd_lib_draw_stringP(5, 10, PSTR("Time left unknown"));
+      } else {
+        unsigned long totalTimeSec;
+        if (printTimeSec < LCD_DETAIL_CACHE_TIME() / 2)
+        {
+          float f = float(printTimeSec) / float(LCD_DETAIL_CACHE_TIME() / 2);
+          if (f > 1.0)
+            f = 1.0;
+          totalTimeSec = float(totalTimeSmoothSec) * f + float(LCD_DETAIL_CACHE_TIME()) * (1 - f);
+        } else {
+          totalTimeSec = totalTimeSmoothSec;
+        }
+        unsigned long timeLeftSec;
+        if (printTimeSec > totalTimeSec)
+          timeLeftSec = 1;
+        else
+          timeLeftSec = totalTimeSec - printTimeSec;
+        int_to_time_string(timeLeftSec, buffer);
+        lcd_lib_draw_stringP(5, 10, PSTR("Time left"));
+        lcd_lib_draw_string(65, 10, buffer);
+      }
+
+      lcd_progressbar(progress);
+    }
+  
 
   lcd_lib_update_screen();
 }
@@ -808,16 +876,17 @@ static char* tune_item_callback(uint8_t nr)
     strcpy_P(c, PSTR("Retraction"));
   else if (nr == 5 + BED_MENU_OFFSET + EXTRUDERS * 2)
     strcpy_P(c, PSTR("LED Brightness"));
-#if EXTRUDER>1
 
+#if EXTRUDERS > 1
   else if (nr == 6 + BED_MENU_OFFSET + EXTRUDERS * 2)
-    strcpy_P(c, PSTR("Prime Nozzle E1"));
+    strcpy_P(c, PSTR("Prime E1"));
   else if (nr == 7 + BED_MENU_OFFSET + EXTRUDERS * 2)
-    strcpy_P(c, PSTR("Prime Nozzle E2"));
+    strcpy_P(c, PSTR("Prime E2"));
 #else
   else if (nr == 6 + BED_MENU_OFFSET + EXTRUDERS * 2)
     strcpy_P(c, PSTR("Prime Nozzle"));
 #endif
+
   return c;
 }
 
@@ -871,7 +940,11 @@ void lcd_menu_print_tune_heatup_nozzle0()
 {
   if (lcd_lib_encoder_pos / ENCODER_TICKS_PER_SCROLL_MENU_ITEM != 0)
   {
+#ifdef DUAL_NOZZLE_TEMP_OFFSET
+    dual_nozzle_temp_offset0 = (int)dual_nozzle_temp_offset0 + (lcd_lib_encoder_pos / ENCODER_TICKS_PER_SCROLL_MENU_ITEM);  //log how far we go
+#endif
     target_temperature[0] = int(target_temperature[0]) + (lcd_lib_encoder_pos / ENCODER_TICKS_PER_SCROLL_MENU_ITEM);
+
     if (target_temperature[0] < 0)
       target_temperature[0] = 0;
     if (target_temperature[0] > HEATER_0_MAXTEMP - 15)
@@ -895,6 +968,9 @@ void lcd_menu_print_tune_heatup_nozzle1()
 {
   if (lcd_lib_encoder_pos / ENCODER_TICKS_PER_SCROLL_MENU_ITEM != 0)
   {
+#ifdef DUAL_NOZZLE_TEMP_OFFSET
+    dual_nozzle_temp_offset1 = (int)dual_nozzle_temp_offset1 + (lcd_lib_encoder_pos / ENCODER_TICKS_PER_SCROLL_MENU_ITEM);  //log how far we go
+#endif
     target_temperature[1] = int(target_temperature[1]) + (lcd_lib_encoder_pos / ENCODER_TICKS_PER_SCROLL_MENU_ITEM);
     if (target_temperature[1] < 0)
       target_temperature[1] = 0;
@@ -1018,16 +1094,16 @@ void lcd_menu_tune_prime_extruder()
   if (lcd_lib_button_pressed)
   {
 
-    target_temperature[active_extruder_placeholder] = active_extruder_starting_temp;
-    active_extruder = active_extruder_placeholder;    //change active extruder back
+    target_temperature[active_extruder] = active_extruder_starting_temp;
+    active_extruder = active_extruder_placeholder;    //change active extruder back if it was changed
     char buffer[16];
 
-    current_position[E_AXIS] = active_extruder_material_position-TUNE_PRIMING_RESTART_DISTANCE;
+    current_position[E_AXIS] = active_extruder_material_position - TUNE_PRIMING_RESTART_DISTANCE;
     plan_set_e_position(current_position[E_AXIS]);
 
-    sprintf_P(buffer, PSTR("M104 S%i"),  target_temperature[active_extruder_placeholder]); //set position back to counter pause retraction
+    sprintf_P(buffer, PSTR("M109 S%i"),  target_temperature[active_extruder_placeholder]); //set temp
     enquecommand(buffer);
-//    enquecommand_P("G1 E20");
+    pause_location_in_buffer = BUFSIZE;
     lcd_change_to_menu(previousMenu, previousEncoderPos);
 
   }
@@ -1039,7 +1115,7 @@ void lcd_menu_tune_prime_extruder()
   char buffer[16];
   int_to_string(int(dsp_temperature[active_extruder]), buffer, PSTR("C/"));
   int_to_string(int(target_temperature[active_extruder]), buffer + strlen(buffer), PSTR("C"));
-  if (card.pause) {
+  if (pause_location_in_buffer == bufindr || card.pause) {  //were at the logged location of the pause command
     lcd_lib_draw_string_centerP(20, PSTR("Nozzle temperature:"));
     lcd_lib_draw_string_centerP(40, PSTR("Rotate to extrude"));
     lcd_lib_draw_string_center(30, buffer);
@@ -1127,6 +1203,8 @@ static void lcd_menu_print_pause()
         zdiff = 2;
       }
 
+      pause_location_in_buffer = bufindw;   //log location in buffer of pasue command, so we know when it gets executed
+
       char buffer[32];
 #if EXTRUDERS >1 && defined(ADVANCED_MATERIAL_CHANGE)    // issue of head crashing into side if using advanced material change, due to offset confusion
       // solve by moving nozzle park position
@@ -1138,6 +1216,7 @@ static void lcd_menu_print_pause()
 #endif
 
       primed = false;
+
     }
     else {
       pauseRequested = true;
