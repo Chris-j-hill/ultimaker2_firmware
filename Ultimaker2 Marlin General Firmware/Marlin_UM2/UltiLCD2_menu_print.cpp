@@ -562,7 +562,7 @@ void lcd_menu_print_printing()
       if (lcd_lib_button_pressed)
       {
         if (IS_SELECTED_MAIN(0)) {
-          sprintf_P(buffer2, PSTR("M109 S%i T0"),  target_temperature[active_extruder]); //queue this command as well as set to wait until stabilised
+          sprintf_P(buffer2, PSTR("M104 S%i T0"),  target_temperature[active_extruder]); //queue this command as well as set to wait until stabilised
           enquecommand(buffer2);
           target_temp_placeholder = target_temperature[active_extruder];
           target_temperature[active_extruder] = 0;
@@ -575,7 +575,7 @@ void lcd_menu_print_printing()
         }
 
         else if (IS_SELECTED_MAIN(1)) {
-          sprintf_P(buffer2, PSTR("M109 S%i T1"),  target_temperature[active_extruder]); 
+          sprintf_P(buffer2, PSTR("M104 S%i T1"),  target_temperature[active_extruder]); 
           enquecommand(buffer2);
           target_temp_placeholder = target_temperature[active_extruder];
           target_temperature[active_extruder] = 0;
@@ -666,7 +666,7 @@ void lcd_menu_print_printing()
           c = int_to_string(dsp_temperature[0], buffer);
           *c++ = '/';
           c = int_to_string(target_temperature[0], c, PSTR(" "));
-          //            *c++ = ' ';
+          
           lcd_lib_draw_string_centerP(20, PSTR("Heating"));
           c = int_to_string(dsp_temperature[1], c);
           *c++ = '/';
