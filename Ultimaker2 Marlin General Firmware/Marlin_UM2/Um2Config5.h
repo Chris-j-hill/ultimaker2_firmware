@@ -183,7 +183,7 @@
 // If your bed has low resistance e.g. .6 ohm and throws the fuse you can duty cycle it to reduce the
 // average current. The value should be an integer and the heat bed will be turned on for 1 interval of
 // HEATER_BED_DUTY_CYCLE_DIVIDER intervals.
-//#define HEATER_BED_DUTY_CYCLE_DIVIDER 4
+#define HEATER_BED_DUTY_CYCLE_DIVIDER 2
 
 // PID settings:
 // Comment the following line to disable PID and enable bang-bang.
@@ -408,11 +408,21 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define FILAMANT_BOWDEN_LENGTH_E1 90
 #endif
 
+
 //added menus
 #define DISABLE_STEPPER_MENU_OPTION_ENABLE  //enable stepper disable menu item in maintanance->advanced->move axis
 #define MOVE_AXIS_MENU_OPTION_ENABLE  // enable menu item in maintanance->advanced->move axis
 #define ADVANCED_MATERIAL_CHANGE  //enable nozzle selection when changing material mid print, if disabled, will simply change active extruder
+#define TUNE_MENU_MOVE_MATERIAL
 
+#ifdef TUNE_MENU_MOVE_MATERIAL
+#define TUNE_PRIMING_RESTART_DISTANCE 1
+#else 
+#define TUNE_PRIMING_RESTART_DISTANCE 0
+#endif
+
+#define DUAL_NOZZLE_TEMP_OFFSET
+#define DUAL_EXTRUDER_PICK_NOZZLE
 //===========================================================================
 //=============================Additional Features===========================
 //===========================================================================
