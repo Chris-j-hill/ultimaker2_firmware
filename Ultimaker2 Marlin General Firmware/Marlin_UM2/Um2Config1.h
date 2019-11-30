@@ -6,6 +6,7 @@
 // 1 bowden extruder, no filament sensor
 
 
+// passcode documented here: https://christopherhillengineering.wordpress.com/2018/03/31/passcodes-on-an-ultimaker/
 #define USE_PASSCODE
 
 

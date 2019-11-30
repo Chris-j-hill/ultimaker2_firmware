@@ -9,6 +9,8 @@
 // BASIC SETTINGS: select your board type, temperature sensor type, axis scaling, and endstop configuration
 
 
+
+// passcode documented here: https://christopherhillengineering.wordpress.com/2018/03/31/passcodes-on-an-ultimaker/
 #define USE_PASSCODE
 
 
@@ -395,6 +397,8 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define DEFAULT_ZJERK                 0.4     // (mm/sec)
 #define DEFAULT_EJERK                 5.0    // (mm/sec)
 
+
+// documentation on multiple bowden lenghts:  https://christopherhillengineering.wordpress.com/2018/06/13/configuring-multiple-bowden-path-lengths/
 #define DIFFERENT_FILAMENT_PATH_LENGTH    //if defined firmware uses the two bowden lengths, can be different, if not defiend, bowden lengths assumed the same
 
 //Length of the bowden tube. Used for the material load/unload procedure.

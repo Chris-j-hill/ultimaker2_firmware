@@ -6,8 +6,13 @@
 // !!!!  fully not implemented   !!!!
  // 2 bowden extruders, enabled filament sensor
 
+
+// passcode documented here: https://christopherhillengineering.wordpress.com/2018/03/31/passcodes-on-an-ultimaker/
 #define USE_PASSCODE
+
+
 #define TUNE_MENU_MOVE_MATERIAL
+
 #ifdef TUNE_MENU_MOVE_MATERIAL
 #define TUNE_PRIMING_RESTART_DISTANCE 1
 #else 

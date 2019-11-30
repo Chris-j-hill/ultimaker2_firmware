@@ -8,6 +8,9 @@
 // Advanced settings can be found in Configuration_adv.h
 // BASIC SETTINGS: select your board type, temperature sensor type, axis scaling, and endstop configuration
 
+
+
+// passcode documented here: https://christopherhillengineering.wordpress.com/2018/03/31/passcodes-on-an-ultimaker/
 //#define USE_PASSCODE
 
 
