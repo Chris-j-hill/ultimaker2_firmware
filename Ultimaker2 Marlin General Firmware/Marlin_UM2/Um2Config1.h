@@ -395,10 +395,10 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define FILAMANT_BOWDEN_LENGTH        705
 
 
-//added menus
+//added menus, see various posts here: https://christopherhillengineering.wordpress.com/
 #define DISABLE_STEPPER_MENU_OPTION_ENABLE  //enable stepper disable menu item in maintanance->advanced->move axis
 #define MOVE_AXIS_MENU_OPTION_ENABLE  // enable menu item in maintanance->advanced->move axis
-#define TUNE_MENU_MOVE_MATERIAL
+#define TUNE_MENU_MOVE_MATERIAL 
 
 #ifdef TUNE_MENU_MOVE_MATERIAL
 #define TUNE_PRIMING_RESTART_DISTANCE 1

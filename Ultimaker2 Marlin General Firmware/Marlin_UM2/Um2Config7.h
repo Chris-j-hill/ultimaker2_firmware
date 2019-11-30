@@ -415,7 +415,8 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define FILAMANT_BOWDEN_LENGTH_E1 705
 #endif
 
-//added menus
+
+//added menus, see various posts here: https://christopherhillengineering.wordpress.com/
 #define DISABLE_STEPPER_MENU_OPTION_ENABLE  //enable stepper disable menu item in maintanance->advanced->move axis
 #define MOVE_AXIS_MENU_OPTION_ENABLE  // enable menu item in maintanance->advanced->move axis
 #define ADVANCED_MATERIAL_CHANGE  //enable nozzle selection when changing material mid print, if disabled, will simply change active extruder
